@@ -1,0 +1,179 @@
+/* Dark theme layout and the Financial Settings card */
+
+:root{
+    --bg-1: #0f1720;
+    --bg-2: #0b1217;
+    --panel: rgba(255,255,255,0.03);
+    --muted: rgba(255,255,255,0.55);
+    --card-border: rgba(255,255,255,0.06);
+    --accent: #2b6ef6;
+    --accent-strong: #1e56d9;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    min-height:100vh;
+}
+
+/* Header */
+.orch-header{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding:20px 36px;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+    position:sticky;
+    top:0;
+    z-index:10;
+}
+
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{
+    font-size:22px;
+    background:linear-gradient(90deg,#6dd3ff,#7b6ef6);
+    padding:8px;
+    border-radius:6px;
+}
+.brand h1{
+    margin:0;
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:0.2px;
+}
+
+/* nav */
+.orch-nav{
+    display:flex;
+    gap:18px;
+    margin-left:20px;
+    flex:1;
+    align-items:center;
+}
+.nav-item{
+    color:var(--muted);
+    text-decoration:none;
+    font-size:14px;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:default;
+}
+.nav-item.active{
+    background: linear-gradient(180deg, rgba(43,110,246,0.14), rgba(30,86,217,0.08));
+    color:#fff;
+    border:1px solid rgba(43,110,246,0.26);
+    box-shadow:0 6px 18px rgba(30,86,217,0.08);
+    font-weight:600;
+}
+
+/* right controls */
+.header-right{
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+.last-updated{
+    font-size:12px;
+    color:var(--muted);
+}
+.user{
+    font-size:14px;
+    color:var(--muted);
+    padding:6px 8px;
+    border-radius:6px;
+}
+.switch-btn{
+    background:linear-gradient(180deg,var(--accent),var(--accent-strong));
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+/* main area */
+.orch-main{
+    padding:40px 20px;
+}
+
+/* center settings card */
+.settings-wrapper{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    margin-top:12px;
+}
+
+.settings-card{
+    width:420px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:28px;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+}
+
+/* card content */
+.card-title{
+    margin:0 0 18px 0;
+    font-size:20px;
+    font-weight:700;
+    color:#ffffff;
+}
+
+.field-label{
+    display:block;
+    margin:12px 0 6px;
+    font-size:13px;
+    color:var(--muted);
+}
+
+.field-input{
+    width:100%;
+    padding:12px 14px;
+    border-radius:8px;
+    background:rgba(4,10,18,0.6);
+    border:1px solid rgba(255,255,255,0.04);
+    color:#eaf2ff;
+    font-size:15px;
+    outline:none;
+    transition:box-shadow .12s, border-color .12s;
+}
+
+.field-input:focus{
+    border-color: rgba(43,110,246,0.6);
+    box-shadow: 0 6px 18px rgba(43,110,246,0.06);
+}
+
+/* actions */
+.actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:18px;
+}
+
+.save-btn{
+    background:linear-gradient(180deg,var(--accent),var(--accent-strong));
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+    box-shadow: 0 8px 20px rgba(30,86,217,0.12);
+}
+
+/* responsive */
+@media (max-width:600px){
+    .orch-header{padding:12px}
+    .orch-nav{display:none}
+    .settings-card{width:92%}
+    .header-right .last-updated{display:none}
+}
