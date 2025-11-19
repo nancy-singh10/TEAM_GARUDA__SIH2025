@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import supabaseAdmin from '../../../lib/supabaseServer';
 import SessionGreeting from './SessionGreeting';
+import TopMetricsRow from './TopMetricsRow';
+import AreaChart24h from './AreaChart24h';
+import ForecastDonut from './ForecastDonut';
+import EnergyMix from './EnergyMix';
 
 type Metrics = {
   renewable_percent: number;
@@ -81,6 +85,34 @@ export default async function CampusAdminDashboard() {
   const renewable = Number(m.renewable_percent ?? 0);
   const renewableFrac = Math.max(0, Math.min(100, renewable)) / 100;
 
+  // build 24h timeseries (synthetic) using the metrics as scale factors
+  const hours = Array.from({ length: 24 }).map((_, i) => i);
+  const peakSolar = Number((m as any).solar_kw ?? 47.4);
+  const peakWind = Number((m as any).wind_kw ?? 34.1);
+  const avgConsumption = (m.monthly_usage_kwh ?? 850) / 30 / 24; // rough kW estimate
+
+  const data = hours.map((h) => {
+    const solarFactor = Math.max(0, Math.exp(-Math.pow((h - 12) / 4, 2)));
+    const solar = Math.round(peakSolar * solarFactor * 10) / 10;
+
+    const windFactor = 0.5 + 0.5 * Math.sin((h / 24) * Math.PI * 2 + 1);
+    const wind = Math.round(peakWind * windFactor * 10) / 10;
+
+    const consumption = Math.round((avgConsumption + 20 * Math.exp(-Math.pow((h - 19) / 5, 2))) * 10) / 10;
+
+    return {
+      time: `${h.toString().padStart(2, '0')}:00`,
+      consumption,
+      solar,
+      wind,
+    };
+  });
+
+  // Forecast donut values (simple proportional values)
+  const forecastSolar = peakSolar;
+  const forecastWind = peakWind;
+  const forecastGrid = Math.max(1, Math.round((m.monthly_usage_kwh ?? 850) / 30 / 24));
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 py-10 px-6">
       <div className="max-w-6xl mx-auto">
@@ -94,6 +126,13 @@ export default async function CampusAdminDashboard() {
             <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
           </div>
         </div>
+
+        <TopMetricsRow
+          solar_kw={Number((m as any).solar_kw ?? 47.4)}
+          wind_kw={Number((m as any).wind_kw ?? 34.1)}
+          battery_percent={Number((m as any).battery_percent ?? 75)}
+          grid_kw={Number((m as any).grid_kw ?? 16)}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-emerald-50 rounded-xl p-5 shadow">
@@ -123,49 +162,40 @@ export default async function CampusAdminDashboard() {
             <div className="text-xs text-slate-600 mt-2">Savings from renewables</div>
           </div>
         </div>
-
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Your Energy Mix</h3>
-              <div className="text-sm text-slate-500">Renewable vs Grid energy usage breakdown</div>
-            </div>
-            <div className="flex gap-6">
-              <div className="w-48 h-48 flex items-center justify-center">
-                <svg viewBox="0 0 32 32" className="w-40 h-40">
-                  <circle r="14" cx="16" cy="16" fill="#e6e7ea" />
-                  <path d={`M16 16 L16 2 A14 14 0 0 1 ${16 + 14*Math.cos(2*Math.PI*renewableFrac - Math.PI/2)} ${16 + 14*Math.sin(2*Math.PI*renewableFrac - Math.PI/2)} Z`} fill="#16a34a" />
-                </svg>
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="md:col-span-2">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <EnergyMix renewablePercent={Number(m.renewable_percent ?? 82.61)} rank={6} rankTotal={25} />
               </div>
-              <div className="flex-1">
-                <div className="mb-3">Weekly Trend</div>
-                <div className="flex items-end gap-2 h-36">
-                  {[60,70,80,85,88,90,87].map((v,idx)=> (
-                    <div key={idx} className="w-8 bg-emerald-500 rounded-t" style={{height: `${v}%`}} />
-                  ))}
+              <div>
+                <div className="bg-white rounded-xl shadow p-6 h-full">
+                  <h3 className="text-lg font-semibold mb-3">Sustainability Impact</h3>
+                  <div className="text-sm text-slate-500 mb-4">Your contribution to campus sustainability</div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm">Trees Equivalent</div>
+                      <div className="font-semibold text-emerald-700">{m.trees_equivalent}</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm">Miles Not Driven</div>
+                      <div className="font-semibold text-sky-700">{m.miles_not_driven ?? 300} mi</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm">Coal Avoided</div>
+                      <div className="font-semibold text-amber-700">{m.coal_avoided_lbs} lbs</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+            <div className="mt-6">
+              <AreaChart24h data={data} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-lg font-semibold mb-3">Sustainability Impact</h3>
-            <div className="text-sm text-slate-500 mb-4">Your contribution to campus sustainability</div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="text-sm">Trees Equivalent</div>
-                <div className="font-semibold text-emerald-700">{m.trees_equivalent}</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-sm">Miles Not Driven</div>
-                <div className="font-semibold text-sky-700">{m.miles_not_driven} mi</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-sm">Coal Avoided</div>
-                <div className="font-semibold text-amber-700">{m.coal_avoided_lbs} lbs</div>
-              </div>
-            </div>
-            <div className="mt-6 p-3 bg-emerald-50 rounded text-emerald-700">Eco Champion Badge Earned! You're in the top 25% of sustainable energy users on campus.</div>
+          <div>
+            <ForecastDonut grid={forecastGrid} solar={forecastSolar} wind={forecastWind} />
           </div>
         </div>
 
