@@ -26,6 +26,15 @@ export function AuthCard({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [campusName, setCampusName] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [emailAddr, setEmailAddr] = useState("");
+  const [campusLoadMin, setCampusLoadMin] = useState("");
+  const [campusLoadMax, setCampusLoadMax] = useState("");
+  const [batterySources, setBatterySources] = useState("");
+  const [batteryCapacity, setBatteryCapacity] = useState("");
+  const [windCapacity, setWindCapacity] = useState("");
+  const [solarCapacity, setSolarCapacity] = useState("");
+  const [location, setLocation] = useState("");
 
   const endpointBase = variant === "admin" ? "state-admin" : "campus-admin";
 
@@ -44,6 +53,15 @@ export function AuthCard({
       const payload: any = { username: email, password };
       if (mode === "signup" && variant === "consumer") {
         payload.campus_name = campusName || "Unnamed Campus"; // required by schema
+        payload.admin_name = adminName || undefined;
+        payload.email = emailAddr || undefined;
+        payload.campus_load_min = campusLoadMin === "" ? undefined : Number(campusLoadMin);
+        payload.campus_load_max = campusLoadMax === "" ? undefined : Number(campusLoadMax);
+        payload.no_of_battery_sources = batterySources === "" ? undefined : Number(batterySources);
+        payload.solar_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
+        payload.wind_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
+        payload.battery_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
+        payload.location = location || undefined;
       }
       const res = await fetch(url, {
         method: 'POST',
@@ -134,16 +152,125 @@ export function AuthCard({
               />
             </div>
             {variant === 'consumer' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Campus Name</label>
-                <input
-                  type="text"
-                  required
-                  value={campusName}
-                  onChange={(e) => setCampusName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="My Renewable Campus"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Campus Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={campusName}
+                    onChange={(e) => setCampusName(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="My Renewable Campus"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Admin Name</label>
+                  <input
+                    type="text"
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={emailAddr}
+                    onChange={(e) => setEmailAddr(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="admin@campus.edu"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Campus Load Min (kW)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={campusLoadMin}
+                    onChange={(e) => setCampusLoadMin(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Campus Load Max (kW)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={campusLoadMax}
+                    onChange={(e) => setCampusLoadMax(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">No. of Battery Sources</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    required
+                    value={batterySources}
+                    onChange={(e) => setBatterySources(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Solar Capacity (kWh)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={solarCapacity}
+                    onChange={(e) => setSolarCapacity(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Wind Capacity (kWh)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={windCapacity}
+                    onChange={(e) => setWindCapacity(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Battery Capacity (kWh)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={batteryCapacity}
+                    onChange={(e) => setBatteryCapacity(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="City, State"
+                  />
+                </div>
               </div>
             )}
           </>
