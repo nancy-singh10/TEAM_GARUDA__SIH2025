@@ -52,16 +52,16 @@ export default function LandingPage() {
             <a
               href="/admin/auth"
               className="inline-block bg-slate-900 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition-shadow duration-150"
-              aria-label="Admin access login or signup"
+              aria-label="State admin access login or signup"
             >
-              Admin Access
+              State Admin Access
             </a>
             <a
               href="/consumer/auth"
               className="inline-block bg-white border border-slate-200 text-slate-900 px-6 py-3 rounded-full shadow hover:bg-slate-50 transition-colors duration-150"
-              aria-label="Consumer access login or signup"
+              aria-label="Campus admin access login or signup"
             >
-              Consumer Access
+              Campus Admin Access
             </a>
           </div>
         </section>

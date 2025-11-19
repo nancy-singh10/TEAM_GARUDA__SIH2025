@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface AuthCardProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
+  // 'admin' maps to state_admin, 'consumer' maps to campus_admin (legacy naming kept for simplicity)
   variant?: "admin" | "consumer";
 }
 
@@ -16,6 +18,54 @@ export function AuthCard({
   variant = "admin",
 }: AuthCardProps) {
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [campusName, setCampusName] = useState("");
+
+  const endpointBase = variant === "admin" ? "state-admin" : "campus-admin";
+
+  const router = useRouter();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setLoading(true);
+    try {
+      const url = `/api/${endpointBase}/${mode === "signup" ? "signup" : "login"}`;
+      const payload: any = { username: email, password };
+      if (mode === "signup" && variant === "consumer") {
+        payload.campus_name = campusName || "Unnamed Campus"; // required by schema
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || 'Request failed');
+      } else {
+        setError(null);
+        // Store lightweight session (NOT secure for production; replace with JWT HttpOnly cookie)
+        try { localStorage.setItem('sessionUser', JSON.stringify(json.user)); } catch {}
+        const dashboard = variant === 'admin' ? '/admin/dashboard' : '/consumer/dashboard';
+        router.push(dashboard);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Unexpected error');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-md w-full mx-auto bg-white rounded-xl shadow-xl border border-slate-100 p-8 relative">
@@ -47,14 +97,16 @@ export function AuthCard({
         </button>
       </div>
 
-      <form className="mt-6 space-y-5" onSubmit={(e) => e.preventDefault()}>
+      <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Username / Email</label>
           <input
-            type="email"
+            type="text"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="you@example.com"
+            placeholder="state_admin or campus_admin"
           />
         </div>
         <div>
@@ -62,26 +114,47 @@ export function AuthCard({
           <input
             type="password"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="••••••••"
           />
         </div>
-        {mode === "signup" && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
+        {mode === 'signup' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
+              />
+            </div>
+            {variant === 'consumer' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Campus Name</label>
+                <input
+                  type="text"
+                  required
+                  value={campusName}
+                  onChange={(e) => setCampusName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="My Renewable Campus"
+                />
+              </div>
+            )}
+          </>
         )}
+        {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
-          className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-blue-600 text-white py-2.5 text-sm font-medium shadow hover:from-emerald-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          disabled={loading}
+          className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-blue-600 text-white py-2.5 text-sm font-medium shadow hover:from-emerald-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {mode === "login" ? "Login" : "Create Account"}
+          {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Create Account'}
         </button>
       </form>
 
