@@ -28,7 +28,7 @@ export default function StateAdminDashboard() {
         {user ? (
           <p className="text-slate-700 mb-6">Welcome, <span className="font-semibold">{user.username}</span>.</p>
         ) : (
-          <p className="text-slate-500 mb-6">No session found. Please <Link href="/admin/auth" className="text-blue-600 hover:underline">login</Link>.</p>
+          <p className="text-slate-500 mb-6">No session found. Please <Link href="/stateAdmin/auth" className="text-blue-600 hover:underline">login</Link>.</p>
         )}
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-white rounded-xl shadow p-5">

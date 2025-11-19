@@ -50,14 +50,14 @@ export default function LandingPage() {
         <section className="mt-8 flex justify-center">
           <div className="inline-flex gap-4">
             <a
-              href="/admin/auth"
+              href="/stateAdmin/auth"
               className="inline-block bg-slate-900 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition-shadow duration-150"
               aria-label="State admin access login or signup"
             >
               State Admin Access
             </a>
             <a
-              href="/consumer/auth"
+              href="/campusAdmin/auth"
               className="inline-block bg-white border border-slate-200 text-slate-900 px-6 py-3 rounded-full shadow hover:bg-slate-50 transition-colors duration-150"
               aria-label="Campus admin access login or signup"
             >

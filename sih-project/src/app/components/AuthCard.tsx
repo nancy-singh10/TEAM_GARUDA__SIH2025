@@ -57,7 +57,7 @@ export function AuthCard({
         setError(null);
         // Store lightweight session (NOT secure for production; replace with JWT HttpOnly cookie)
         try { localStorage.setItem('sessionUser', JSON.stringify(json.user)); } catch {}
-        const dashboard = variant === 'admin' ? '/admin/dashboard' : '/consumer/dashboard';
+        const dashboard = variant === 'admin' ? '/stateAdmin/dashboard' : '/campusAdmin/dashboard';
         router.push(dashboard);
       }
     } catch (err: any) {
