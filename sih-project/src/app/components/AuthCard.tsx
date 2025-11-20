@@ -36,6 +36,7 @@ export function AuthCard({
   const [solarCapacity, setSolarCapacity] = useState("");
   const [location, setLocation] = useState("");
 
+  // Ensure this matches your actual folder name in src/app/api
   const endpointBase = variant === "admin" ? "state-admin" : "campus-admin";
 
   const router = useRouter();
@@ -43,38 +44,64 @@ export function AuthCard({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
     if (mode === "signup" && password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
+
     try {
       const url = `/api/${endpointBase}/${mode === "signup" ? "signup" : "login"}`;
       const payload: any = { username: email, password };
+
       if (mode === "signup" && variant === "consumer") {
-        payload.campus_name = campusName || "Unnamed Campus"; // required by schema
+        payload.campus_name = campusName || "Unnamed Campus";
         payload.admin_name = adminName || undefined;
-        payload.email = emailAddr || undefined;
-        payload.campus_load_min = campusLoadMin === "" ? undefined : Number(campusLoadMin);
-        payload.campus_load_max = campusLoadMax === "" ? undefined : Number(campusLoadMax);
-        payload.no_of_battery_sources = batterySources === "" ? undefined : Number(batterySources);
-        payload.solar_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
-        payload.wind_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
-        payload.battery_capacity = batteryCapacity === "" ? undefined : Number(batteryCapacity);
+        
+        // Ensure email is undefined if empty string to avoid Zod validation error
+        payload.email = emailAddr === "" ? undefined : emailAddr;
+
+        // Helper to convert string input to number safely
+        const toNumber = (val: string) => (val === "" ? undefined : Number(val));
+
+        payload.campus_load_min = toNumber(campusLoadMin);
+        payload.campus_load_max = toNumber(campusLoadMax);
+        payload.no_of_battery_sources = toNumber(batterySources);
+        
+        // FIXED: Use correct state variables here
+        payload.solar_capacity = toNumber(solarCapacity);
+        payload.wind_capacity = toNumber(windCapacity);
+        payload.battery_capacity = toNumber(batteryCapacity);
+        
         payload.location = location || undefined;
       }
+
+      console.log("Sending payload:", payload); // helpful for debugging
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
       const json = await res.json();
+
       if (!res.ok) {
-        setError(json.error || 'Request failed');
+        // If validation error exists, show the first one to be helpful
+        let errorMsg = json.error || 'Request failed';
+        if (json.details?.fieldErrors) {
+            const firstField = Object.keys(json.details.fieldErrors)[0];
+            const firstMsg = json.details.fieldErrors[firstField][0];
+            errorMsg = `${firstField}: ${firstMsg}`;
+        }
+        setError(errorMsg);
       } else {
         setError(null);
-        // Store lightweight session (NOT secure for production; replace with JWT HttpOnly cookie)
+        // Store lightweight session
         try { localStorage.setItem('sessionUser', JSON.stringify(json.user)); } catch {}
+        
         const dashboard = variant === 'admin' ? '/stateAdmin/dashboard' : '/campusAdmin/dashboard';
         router.push(dashboard);
       }
@@ -124,7 +151,7 @@ export function AuthCard({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="state_admin or campus_admin"
+            placeholder={variant === 'admin' ? "state_master" : "north_admin"}
           />
         </div>
         <div>
@@ -281,7 +308,7 @@ export function AuthCard({
           disabled={loading}
           className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-blue-600 text-white py-2.5 text-sm font-medium shadow hover:from-emerald-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Create Account'}
+          {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
         </button>
       </form>
 

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseServer'; // Ensure this path is correct
+import { supabaseAdmin } from '@/lib/supabaseServer';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
-// 1. Define the Schema (Same as before)
 const CampusSignupSchema = z.object({
   username: z.string().min(3),
   password: z.string().min(6),
@@ -19,36 +18,49 @@ const CampusSignupSchema = z.object({
   location: z.string().optional(),
 });
 
-export async function POST(request: Request){
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     const parsed = CampusSignupSchema.safeParse(body);
 
-    if (!parsed.success) { 
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 });
     }
 
     const data = parsed.data;
 
-    // 2. Check if username already exists in DB (Custom check)
+    // 1. Check if username exists
     const { data: existingUser } = await supabaseAdmin
       .from('campus_admin')
       .select('username')
       .eq('username', data.username)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
     }
 
-    // 3. CREATE AUTH USER (The Missing Step!)
-    // We use the email if provided, or fake a dummy email based on username for Auth
+    // 2. Get a valid State Admin ID (Dynamic Fix)
+    // Instead of hardcoding '1', we fetch the first available state_admin_id
+    const { data: stateAdmin, error: stateError } = await supabaseAdmin
+      .from('state_admin')
+      .select('state_admin_id')
+      .limit(1)
+      .maybeSingle();
+
+    if (stateError || !stateAdmin) {
+      console.error("State Admin Lookup Failed:", stateError);
+      return NextResponse.json({ error: 'No State Admin found to link campus to. Create a State Admin first.' }, { status: 500 });
+    }
+
+    const validStateAdminId = stateAdmin.state_admin_id;
+
+    // 3. Create Auth User
     const authEmail = data.email || `${data.username}@energyflow.app`;
-    
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: authEmail,
-      password: data.password, // Set their real password in Auth too
-      email_confirm: true // Auto-confirm so they can login immediately
+      password: data.password,
+      email_confirm: true
     });
 
     if (authError || !authData.user) {
@@ -56,17 +68,17 @@ export async function POST(request: Request){
       return NextResponse.json({ error: 'Failed to register auth user' }, { status: 500 });
     }
 
-    // 4. Hash Password for your custom DB column (Legacy support)
+    // 4. Hash Password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // 5. INSERT INTO DATABASE (With the new AUTH_ID)
+    // 5. Insert into DB
     const { error: dbError } = await supabaseAdmin
       .from('campus_admin')
       .insert({
         username: data.username,
         password: hashedPassword,
         campus_name: data.campus_name,
-        auth_id: authData.user.id, // <--- THIS LINKS RLS!
+        auth_id: authData.user.id,
         admin_name: data.admin_name,
         email: data.email,
         campus_load_min: data.campus_load_min,
@@ -76,14 +88,13 @@ export async function POST(request: Request){
         wind_capacity: data.wind_capacity,
         battery_capacity: data.battery_capacity,
         location: data.location,
-        state_admin_id: 1 // Defaulting to ID 1 for now
+        state_admin_id: validStateAdminId // Uses the real ID found in step 2
       });
 
     if (dbError) {
-      // Rollback: Delete the auth user if DB insert fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       console.error("DB Insert Failed:", dbError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      return NextResponse.json({ error: 'Database error', details: dbError }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
