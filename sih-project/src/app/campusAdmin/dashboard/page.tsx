@@ -122,9 +122,19 @@ export default async function CampusAdminDashboard() {
             <SessionGreeting />
           </div>
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">{renewable.toFixed(2)}% Renewable</div>
-            <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
-          </div>
+  <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">{renewable.toFixed(2)}% Renewable</div>
+
+  {/* EXPORT REPORT BUTTON (left of Logout) */}
+  <a
+    href="/api/export-report"
+    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+  >
+    Export Report
+  </a>
+
+  <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
+</div>
+
         </div>
 
         <TopMetricsRow
