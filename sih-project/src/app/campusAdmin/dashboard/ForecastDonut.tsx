@@ -15,8 +15,8 @@ export default function ForecastDonut({ grid, solar, wind }: { grid: number; sol
     <div className="bg-white rounded-xl shadow p-6 h-full">
       <h3 className="text-lg font-semibold mb-2">7-Day Energy Forecast</h3>
       <div className="text-sm text-slate-500 mb-4">Predicted generation based on weather patterns</div>
-      <div style={{ width: '100%', height: 240 }}>
-        <ResponsiveContainer>
+      <div className="w-full h-[240px] min-w-0">
+        <ResponsiveContainer width="100%" height="100%" debounce={200}>
           <PieChart>
             <Pie data={data} dataKey="value" innerRadius={60} outerRadius={90} paddingAngle={4}>
               {data.map((entry, index) => (

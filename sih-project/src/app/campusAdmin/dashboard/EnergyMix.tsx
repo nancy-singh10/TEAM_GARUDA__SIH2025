@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export default function EnergyMix({ rank = 6, rankTotal = 25 }: { rank?: number; rankTotal?: number }) {
+export default function EnergyMix({ rank = 6, rankTotal = 25, renewablePercent }: { rank?: number; rankTotal?: number; renewablePercent?: number }) {
   return (
     <div className="bg-white rounded-xl shadow p-6 flex items-center justify-center">
       <div className="text-center">
@@ -14,6 +14,9 @@ export default function EnergyMix({ rank = 6, rankTotal = 25 }: { rank?: number;
           </div>
         </div>
         <div className="mt-3 text-sm text-emerald-600">Top performers: higher rank = better</div>
+        {renewablePercent !== undefined && (
+            <div className="mt-2 text-xs text-slate-400">Renewable: {renewablePercent.toFixed(1)}%</div>
+        )}
       </div>
     </div>
   );
