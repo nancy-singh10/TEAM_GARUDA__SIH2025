@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import supabaseAdmin from '../../../lib/supabaseServer';
 import SessionGreeting from './SessionGreeting';
@@ -5,6 +6,8 @@ import TopMetricsRow from './TopMetricsRow';
 import AreaChart24h from './AreaChart24h';
 import ForecastDonut from './ForecastDonut';
 import EnergyMix from './EnergyMix';
+import SimulateButton from './SimulateButton';
+import { generateEnergyData } from '@/lib/energyUtils';
 
 type Metrics = {
   renewable_percent: number;
@@ -14,6 +17,10 @@ type Metrics = {
   trees_equivalent?: number;
   miles_not_driven?: number;
   coal_avoided_lbs?: number;
+  solar_kw?: number;
+  wind_kw?: number;
+  battery_percent?: number;
+  grid_kw?: number;
 };
 
 async function fetchMetrics(): Promise<Metrics> {
@@ -43,7 +50,11 @@ async function fetchMetrics(): Promise<Metrics> {
         energy_cost: 127.5,
         trees_equivalent: 6,
         miles_not_driven: 300,
-        coal_avoided_lbs: 56.4
+        coal_avoided_lbs: 56.4,
+        solar_kw: 47.4,
+        wind_kw: 34.1,
+        battery_percent: 75,
+        grid_kw: 16
       };
     }
 
@@ -55,6 +66,13 @@ async function fetchMetrics(): Promise<Metrics> {
     const energy_cost = Number(analysisData?.cost ?? 127.5);
     const trees_equivalent = Number(comparisonData?.trees_saved ?? comparisonData?.trees_saved_count ?? comparisonData?.trees_saved ?? 6);
     const coal_avoided_lbs = Number(comparisonData?.coal_avoided_lbs ?? 56.4);
+    
+    // Extract capacity/current values for the generator
+    const solar_kw = Number(analysisData?.energy_solar ?? analysisData?.solar_kw ?? 47.4);
+    const wind_kw = Number(analysisData?.energy_wind ?? analysisData?.wind_kw ?? 34.1);
+    const battery_percent = Number(analysisData?.battery_percent ?? 75);
+    // Calculate grid usage if not present (Consumption - (Solar + Wind))
+    const grid_kw = Number(analysisData?.grid_kw ?? Math.max(0, monthly_usage_kwh - (solar_kw + wind_kw) * 24 * 30 / 1000)); // Rough fallback or 16
 
     // miles_not_driven is not stored in schema screenshots; leave undefined or derive later
     return {
@@ -64,7 +82,11 @@ async function fetchMetrics(): Promise<Metrics> {
       energy_cost: isNaN(energy_cost) ? 127.5 : energy_cost,
       trees_equivalent: isNaN(trees_equivalent) ? 6 : trees_equivalent,
       miles_not_driven: undefined,
-      coal_avoided_lbs: isNaN(coal_avoided_lbs) ? 56.4 : coal_avoided_lbs
+      coal_avoided_lbs: isNaN(coal_avoided_lbs) ? 56.4 : coal_avoided_lbs,
+      solar_kw,
+      wind_kw,
+      battery_percent,
+      grid_kw
     };
   } catch (err) {
     return {
@@ -74,7 +96,11 @@ async function fetchMetrics(): Promise<Metrics> {
       energy_cost: 127.5,
       trees_equivalent: 6,
       miles_not_driven: 300,
-      coal_avoided_lbs: 56.4
+      coal_avoided_lbs: 56.4,
+      solar_kw: 47.4,
+      wind_kw: 34.1,
+      battery_percent: 75,
+      grid_kw: 16
     };
   }
 }
@@ -85,28 +111,19 @@ export default async function CampusAdminDashboard() {
   const renewable = Number(m.renewable_percent ?? 0);
   const renewableFrac = Math.max(0, Math.min(100, renewable)) / 100;
 
-  // build 24h timeseries (synthetic) using the metrics as scale factors
-  const hours = Array.from({ length: 24 }).map((_, i) => i);
-  const peakSolar = Number((m as any).solar_kw ?? 47.4);
-  const peakWind = Number((m as any).wind_kw ?? 34.1);
-  const avgConsumption = (m.monthly_usage_kwh ?? 850) / 30 / 24; // rough kW estimate
-
-  const data = hours.map((h) => {
-    const solarFactor = Math.max(0, Math.exp(-Math.pow((h - 12) / 4, 2)));
-    const solar = Math.round(peakSolar * solarFactor * 10) / 10;
-
-    const windFactor = 0.5 + 0.5 * Math.sin((h / 24) * Math.PI * 2 + 1);
-    const wind = Math.round(peakWind * windFactor * 10) / 10;
-
-    const consumption = Math.round((avgConsumption + 20 * Math.exp(-Math.pow((h - 19) / 5, 2))) * 10) / 10;
-
-    return {
-      time: `${h.toString().padStart(2, '0')}:00`,
-      consumption,
-      solar,
-      wind,
-    };
-  });
+  // Generate dynamic data based on fetched metrics
+  const peakSolar = Number(m.solar_kw ?? 47.4);
+  const peakWind = Number(m.wind_kw ?? 34.1);
+  const batteryStart = Number(m.battery_percent ?? 75);
+  
+  // Use the generator function
+  const data = generateEnergyData(
+    0,           // minSolar
+    peakSolar,   // maxSolar
+    peakWind * 0.2, // minWind
+    peakWind,    // maxWind
+    batteryStart // batteryPercentage
+  );
 
   // Forecast donut values (simple proportional values)
   const forecastSolar = peakSolar;
@@ -122,6 +139,7 @@ export default async function CampusAdminDashboard() {
             <SessionGreeting />
           </div>
           <div className="flex items-center gap-3">
+            <SimulateButton />
             <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">{renewable.toFixed(2)}% Renewable</div>
             <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
           </div>

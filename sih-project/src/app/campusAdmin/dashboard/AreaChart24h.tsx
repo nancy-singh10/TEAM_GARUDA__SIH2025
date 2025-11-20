@@ -15,8 +15,8 @@ export default function AreaChart24h({ data }: { data: Point[] }) {
     <div className="bg-white rounded-xl shadow p-6">
       <h3 className="text-lg font-semibold mb-2">Energy Generation & Demand (24h)</h3>
       <div className="text-sm text-slate-500 mb-4">Real-time monitoring of campus energy flow</div>
-      <div style={{ width: '100%', height: 360 }}>
-        <ResponsiveContainer>
+      <div className="w-full h-[360px] min-w-0">
+        <ResponsiveContainer width="100%" height="100%" debounce={200}>
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
