@@ -141,6 +141,26 @@ export default async function CampusAdminDashboard() {
           <div className="flex items-center gap-3">
             <SimulateButton />
             <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">{renewable.toFixed(2)}% Renewable</div>
+            <a
+  href="/api/export-report"
+  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-200"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 16l4-5m-4 5l-4-5m4 5V4m8 12v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4"
+    />
+  </svg>
+  Export Report
+</a>
             <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
           </div>
         </div>
