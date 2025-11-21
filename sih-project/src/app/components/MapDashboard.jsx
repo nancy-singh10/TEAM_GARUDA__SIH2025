@@ -11,6 +11,7 @@ import Feature from "ol/Feature";
 import { Icon, Style } from "ol/style";
 import Overlay from "ol/Overlay";
 import { fromLonLat } from "ol/proj";
+import { useTheme } from "next-themes";
 
 const campuses = [
   {
@@ -35,6 +36,7 @@ export default function MapDashboard() {
   const mapRef = useRef();
   const overlayRef = useRef();
   const [map, setMap] = useState();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!map) {
@@ -58,10 +60,15 @@ export default function MapDashboard() {
       const vectorSource = new VectorSource({ features });
       const vectorLayer = new VectorLayer({ source: vectorSource });
 
+      const tileLayer = new TileLayer({ 
+        source: new OSM(),
+        className: 'ol-layer-osm'
+      });
+
       const initialMap = new Map({
         target: mapRef.current,
         layers: [
-          new TileLayer({ source: new OSM() }),
+          tileLayer,
           vectorLayer,
         ],
         view: new View({
@@ -72,15 +79,12 @@ export default function MapDashboard() {
 
       // Overlay for info popup
       const overlayContainer = document.createElement("div");
-      overlayContainer.style.background = "white";
-      overlayContainer.style.padding = "10px";
-      overlayContainer.style.borderRadius = "6px";
-      overlayContainer.style.minWidth = "200px";
-      overlayContainer.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+      overlayContainer.className = "bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl min-w-[240px] border border-slate-200 dark:border-slate-700";
       const overlay = new Overlay({
         element: overlayContainer,
         positioning: "bottom-center",
         stopEvent: false,
+        offset: [0, -10],
       });
       overlayRef.current = overlay;
       initialMap.addOverlay(overlay);
@@ -93,15 +97,20 @@ export default function MapDashboard() {
         if (feature) {
           const campus = feature.get("campus");
           overlayContainer.innerHTML = `
-            <div style="margin-bottom:8px;">
-              <div style="font-size:14px; margin-bottom:4px;">Renewable Usage</div>
-              <div style="width:100%; background:#ddd; border-radius:4px; height:10px;">
-                <div style="width:${campus.renewable_usage}%; background:#4caf50; height:100%; border-radius:4px;"></div>
+            <div class="mb-3">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Renewable Usage</span>
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">${campus.renewable_usage}%</span>
               </div>
-              <div style="font-size:12px; text-align:right;">${campus.renewable_usage}%</div>
+              <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                <div class="bg-emerald-500 h-full rounded-full" style="width:${campus.renewable_usage}%"></div>
+              </div>
             </div>
-            <h4>${campus.name}</h4>
-            <a href="${campus.details_url}" style="color:#2196f3; text-decoration:underline;">View More Stats</a>
+            <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">${campus.name}</h4>
+            <a href="${campus.details_url}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+              View Stats
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
           `;
           overlay.setPosition(evt.coordinate);
         } else {
@@ -113,5 +122,26 @@ export default function MapDashboard() {
     }
   }, [map]);
 
-  return <div ref={mapRef} style={{ width: "100%", height: "600px" }} />;
+  // Apply dark mode filter to map tiles
+  useEffect(() => {
+    if (mapRef.current) {
+      const canvas = mapRef.current.querySelector('.ol-layer-osm canvas');
+      if (canvas) {
+        canvas.style.filter = theme === 'dark' ? 'invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.2)' : 'none';
+      }
+    }
+  }, [theme]);
+
+  return (
+    <div className="relative w-full h-[600px] bg-slate-100 dark:bg-slate-900 overflow-hidden rounded-xl">
+      <div ref={mapRef} className="w-full h-full" />
+      {/* CSS hack to ensure the filter applies when tiles load/change */}
+      <style jsx global>{`
+        .dark .ol-layer-osm canvas {
+          filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.2) !important;
+          transition: filter 0.3s ease;
+        }
+      `}</style>
+    </div>
+  );
 }

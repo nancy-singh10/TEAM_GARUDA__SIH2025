@@ -131,16 +131,16 @@ export default async function CampusAdminDashboard() {
   const forecastGrid = Math.max(1, Math.round((m.monthly_usage_kwh ?? 850) / 30 / 24));
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 py-10 px-6">
+    <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Energy Dashboard</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Energy Dashboard</h1>
             <SessionGreeting />
           </div>
           <div className="flex items-center gap-3">
             <SimulateButton />
-            <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">{renewable.toFixed(2)}% Renewable</div>
+            <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium border border-emerald-100 dark:border-emerald-800">{renewable.toFixed(2)}% Renewable</div>
             <a
   href="/api/export-report"
   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-200"
@@ -161,7 +161,7 @@ export default async function CampusAdminDashboard() {
   </svg>
   Export Report
 </a>
-            <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">Logout</Link>
+            <Link href="/" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Logout</Link>
           </div>
         </div>
 
@@ -173,31 +173,31 @@ export default async function CampusAdminDashboard() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-emerald-50 rounded-xl p-5 shadow">
-            <div className="text-sm text-emerald-700 font-medium">Renewable Usage</div>
-            <div className="text-2xl font-bold text-emerald-800 mt-2">{renewable.toFixed(6)}%</div>
-            <div className="h-2 bg-white/60 rounded-full mt-3 overflow-hidden">
-              <div style={{ width: `${renewable}%` }} className="h-2 bg-emerald-600" />
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-5 shadow border border-emerald-100 dark:border-emerald-800">
+            <div className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Renewable Usage</div>
+            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 mt-2">{renewable.toFixed(6)}%</div>
+            <div className="h-2 bg-white/60 dark:bg-slate-800/60 rounded-full mt-3 overflow-hidden">
+              <div style={{ width: `${renewable}%` }} className="h-2 bg-emerald-600 dark:bg-emerald-500" />
             </div>
-            <div className="text-xs text-slate-600 mt-2">Above campus average</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">Above campus average</div>
           </div>
 
-          <div className="bg-sky-50 rounded-xl p-5 shadow">
-            <div className="text-sm text-sky-700 font-medium">Carbon Saved</div>
-            <div className="text-2xl font-bold text-sky-800 mt-2">{m.carbon_saved_kg} kg</div>
-            <div className="text-xs text-slate-600 mt-2">This month</div>
+          <div className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-5 shadow border border-sky-100 dark:border-sky-800">
+            <div className="text-sm text-sky-700 dark:text-sky-400 font-medium">Carbon Saved</div>
+            <div className="text-2xl font-bold text-sky-800 dark:text-sky-300 mt-2">{m.carbon_saved_kg} kg</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">This month</div>
           </div>
 
-          <div className="bg-amber-50 rounded-xl p-5 shadow">
-            <div className="text-sm text-amber-700 font-medium">Monthly Usage</div>
-            <div className="text-2xl font-bold text-amber-800 mt-2">{m.monthly_usage_kwh} kWh</div>
-            <div className="text-xs text-slate-600 mt-2">{Math.round((Math.random()-0.5)*20)}% change vs last month</div>
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-5 shadow border border-amber-100 dark:border-amber-800">
+            <div className="text-sm text-amber-700 dark:text-amber-400 font-medium">Monthly Usage</div>
+            <div className="text-2xl font-bold text-amber-800 dark:text-amber-300 mt-2">{m.monthly_usage_kwh} kWh</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">{Math.round((Math.random()-0.5)*20)}% change vs last month</div>
           </div>
 
-          <div className="bg-violet-50 rounded-xl p-5 shadow">
-            <div className="text-sm text-violet-700 font-medium">Energy Cost</div>
-            <div className="text-2xl font-bold text-violet-800 mt-2">${m.energy_cost}</div>
-            <div className="text-xs text-slate-600 mt-2">Savings from renewables</div>
+          <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-5 shadow border border-violet-100 dark:border-violet-800">
+            <div className="text-sm text-violet-700 dark:text-violet-400 font-medium">Energy Cost</div>
+            <div className="text-2xl font-bold text-violet-800 dark:text-violet-300 mt-2">${m.energy_cost}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">Savings from renewables</div>
           </div>
         </div>
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -207,21 +207,21 @@ export default async function CampusAdminDashboard() {
                 <EnergyMix renewablePercent={Number(m.renewable_percent ?? 82.61)} rank={6} rankTotal={25} />
               </div>
               <div>
-                <div className="bg-white rounded-xl shadow p-6 h-full">
-                  <h3 className="text-lg font-semibold mb-3">Sustainability Impact</h3>
-                  <div className="text-sm text-slate-500 mb-4">Your contribution to campus sustainability</div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 h-full border border-slate-100 dark:border-slate-700">
+                  <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white">Sustainability Impact</h3>
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">Your contribution to campus sustainability</div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <div className="text-sm">Trees Equivalent</div>
-                      <div className="font-semibold text-emerald-700">{m.trees_equivalent}</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">Trees Equivalent</div>
+                      <div className="font-semibold text-emerald-700 dark:text-emerald-400">{m.trees_equivalent}</div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <div className="text-sm">Miles Not Driven</div>
-                      <div className="font-semibold text-sky-700">{m.miles_not_driven ?? 300} mi</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">Miles Not Driven</div>
+                      <div className="font-semibold text-sky-700 dark:text-sky-400">{m.miles_not_driven ?? 300} mi</div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <div className="text-sm">Coal Avoided</div>
-                      <div className="font-semibold text-amber-700">{m.coal_avoided_lbs} lbs</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">Coal Avoided</div>
+                      <div className="font-semibold text-amber-700 dark:text-amber-400">{m.coal_avoided_lbs} lbs</div>
                     </div>
                   </div>
                 </div>
@@ -238,33 +238,33 @@ export default async function CampusAdminDashboard() {
         </div>
 
         <div className="mb-10">
-          <h3 className="text-xl font-semibold mb-4">Smart Recommendations</h3>
+          <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Smart Recommendations</h3>
           <div className="space-y-4">
-            <div className="p-4 bg-white rounded shadow flex justify-between items-center">
+            <div className="p-4 bg-white dark:bg-slate-800 rounded shadow flex justify-between items-center border border-slate-100 dark:border-slate-700">
               <div>
-                <div className="font-medium">Battery optimization <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded ml-2">High Impact</span></div>
-                <div className="text-sm text-slate-500">Battery at optimal level. Consider partial discharge during peak hours.</div>
-                <div className="text-sm text-emerald-600 mt-1">Potential savings: $45/month</div>
+                <div className="font-medium text-slate-900 dark:text-white">Battery optimization <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded ml-2">High Impact</span></div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Battery at optimal level. Consider partial discharge during peak hours.</div>
+                <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: $45/month</div>
               </div>
-              <button className="px-3 py-1 bg-white border rounded">Optimize Schedule</button>
+              <button className="px-3 py-1 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Optimize Schedule</button>
             </div>
 
-            <div className="p-4 bg-white rounded shadow flex justify-between items-center">
+            <div className="p-4 bg-white dark:bg-slate-800 rounded shadow flex justify-between items-center border border-slate-100 dark:border-slate-700">
               <div>
-                <div className="font-medium">Load balancing opportunity <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
-                <div className="text-sm text-slate-500">Consider shifting non-critical loads to match generation patterns.</div>
-                <div className="text-sm text-emerald-600 mt-1">Potential savings: $32/month</div>
+                <div className="font-medium text-slate-900 dark:text-white">Load balancing opportunity <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Consider shifting non-critical loads to match generation patterns.</div>
+                <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: $32/month</div>
               </div>
-              <button className="px-3 py-1 bg-white border rounded">Shift Loads</button>
+              <button className="px-3 py-1 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Shift Loads</button>
             </div>
 
-            <div className="p-4 bg-white rounded shadow flex justify-between items-center">
+            <div className="p-4 bg-white dark:bg-slate-800 rounded shadow flex justify-between items-center border border-slate-100 dark:border-slate-700">
               <div>
-                <div className="font-medium">Shift workshop loads to 2–4 PM <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
-                <div className="text-sm text-slate-500">Solar generation peaks during these hours. Move energy-intensive operations here.</div>
-                <div className="text-sm text-emerald-600 mt-1">Potential savings: $56/month</div>
+                <div className="font-medium text-slate-900 dark:text-white">Shift workshop loads to 2–4 PM <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Solar generation peaks during these hours. Move energy-intensive operations here.</div>
+                <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: $56/month</div>
               </div>
-              <button className="px-3 py-1 bg-white border rounded">Schedule Loads</button>
+              <button className="px-3 py-1 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Schedule Loads</button>
             </div>
           </div>
         </div>
