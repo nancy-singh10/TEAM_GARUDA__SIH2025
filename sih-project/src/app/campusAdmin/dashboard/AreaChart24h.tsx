@@ -12,9 +12,9 @@ type Point = {
 
 export default function AreaChart24h({ data }: { data: Point[] }) {
   return (
-    <div className="bg-white rounded-xl shadow p-6">
-      <h3 className="text-lg font-semibold mb-2">Energy Generation & Demand (24h)</h3>
-      <div className="text-sm text-slate-500 mb-4">Real-time monitoring of campus energy flow</div>
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 border border-slate-100 dark:border-slate-700">
+      <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">Energy Generation & Demand (24h)</h3>
+      <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">Real-time monitoring of campus energy flow</div>
       <div className="w-full h-[360px] min-w-0">
         <ResponsiveContainer width="100%" height="100%" debounce={200}>
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -28,14 +28,23 @@ export default function AreaChart24h({ data }: { data: Point[] }) {
                 <stop offset="95%" stopColor="#bbf7d0" stopOpacity={0.2} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-            <YAxis />
-            <CartesianGrid strokeDasharray="3 3" />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="consumption" stroke="#fb923c" fillOpacity={0} dot={false} />
-            <Area type="monotone" dataKey="solar" stroke="#10b981" fill="url(#colorSolar)" dot={false} />
-            <Area type="monotone" dataKey="wind" stroke="#60a5fa" fill="url(#colorWind)" dot={false} />
+            <XAxis dataKey="time" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={{ stroke: '#cbd5e1' }} tickLine={{ stroke: '#cbd5e1' }} />
+            <YAxis tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#cbd5e1' }} tickLine={{ stroke: '#cbd5e1' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                borderRadius: '8px', 
+                border: 'none', 
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                color: '#1e293b'
+              }}
+              itemStyle={{ color: '#1e293b' }}
+            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            <Area type="monotone" dataKey="consumption" stroke="#fb923c" fillOpacity={0} dot={false} strokeWidth={2} />
+            <Area type="monotone" dataKey="solar" stroke="#10b981" fill="url(#colorSolar)" dot={false} strokeWidth={2} />
+            <Area type="monotone" dataKey="wind" stroke="#60a5fa" fill="url(#colorWind)" dot={false} strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

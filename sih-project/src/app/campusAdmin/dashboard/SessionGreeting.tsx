@@ -21,11 +21,11 @@ export default function SessionGreeting() {
 
   if (!user) {
     return (
-      <p className="text-slate-500 mb-4">No session found. Please <Link href="/campusAdmin/auth" className="text-blue-600 hover:underline">login</Link>.</p>
+      <p className="text-slate-500 dark:text-slate-400 mb-4">No session found. Please <Link href="/campusAdmin/auth" className="text-blue-600 dark:text-blue-400 hover:underline">login</Link>.</p>
     );
   }
 
   return (
-    <p className="text-slate-700 mb-4">Welcome back, <span className="font-semibold">{user.username}</span>{user.campus_name && <> from <span className='font-semibold'>{user.campus_name}</span></>}.</p>
+    <p className="text-slate-700 dark:text-slate-300 mb-4">Welcome back, <span className="font-semibold text-slate-900 dark:text-white">{user.username}</span>{user.campus_name && <> from <span className='font-semibold text-slate-900 dark:text-white'>{user.campus_name}</span></>}.</p>
   );
 }
