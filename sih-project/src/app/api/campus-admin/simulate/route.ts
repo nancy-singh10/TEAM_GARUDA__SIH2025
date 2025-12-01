@@ -66,10 +66,10 @@ export async function POST(request: Request) {
       campus_admin_id: targetCampusId,
       energy_solar: parseFloat(avgSolar.toFixed(2)), // Storing average/peak as the "kw" capacity or current reading
       energy_wind: parseFloat(avgWind.toFixed(2)),
-      consumption: parseFloat(totalConsumption.toFixed(2)),
+      load: parseFloat(totalConsumption.toFixed(2)),
       battery_percent: Math.round(currentBattery), // Must be integer
-      savings: parseFloat(carbonSaved.toFixed(2)),
-      cost: parseFloat((totalConsumption * 0.15).toFixed(2)), // $0.15 per kWh
+      // savings: parseFloat(carbonSaved.toFixed(2)),
+      // cost: parseFloat((totalConsumption * 0.15).toFixed(2)), // $0.15 per kWh
       // grid_kw: parseFloat(Math.max(0, totalConsumption - totalRenewable).toFixed(2)) // Net grid usage - REMOVED as not in schema
     };
 

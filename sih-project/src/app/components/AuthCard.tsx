@@ -191,7 +191,7 @@ export function AuthCard({
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Username / Email</label>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Username</label>
                   <input
                     type="text"
                     required
