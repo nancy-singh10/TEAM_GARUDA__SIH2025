@@ -11,7 +11,7 @@ const CampusSignupSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   campus_load_min: z.number().optional(),
   campus_load_max: z.number().optional(),
-  no_of_battery_sources: z.number().optional(),
+  // REMOVED: no_of_battery_sources (Field not in DB)
   solar_capacity: z.number().optional(),
   wind_capacity: z.number().optional(),
   battery_capacity: z.number().optional(),
@@ -40,8 +40,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
     }
 
-    // 2. Get a valid State Admin ID (Dynamic Fix)
-    // Instead of hardcoding '1', we fetch the first available state_admin_id
+    // 2. Get a valid State Admin ID
+    // Fetches the first available state_admin_id to link the campus
     const { data: stateAdmin, error: stateError } = await supabaseAdmin
       .from('state_admin')
       .select('state_admin_id')
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     const validStateAdminId = stateAdmin.state_admin_id;
 
     // 3. Create Auth User
+    // If email is missing, we generate a fake one for Auth purposes
     const authEmail = data.email || `${data.username}@energyflow.app`;
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: authEmail,
@@ -83,15 +84,16 @@ export async function POST(request: Request) {
         email: data.email,
         campus_load_min: data.campus_load_min,
         campus_load_max: data.campus_load_max,
-        no_of_battery_sources: data.no_of_battery_sources,
+        // REMOVED: no_of_battery_sources (Field not in DB)
         solar_capacity: data.solar_capacity,
         wind_capacity: data.wind_capacity,
         battery_capacity: data.battery_capacity,
         location: data.location,
-        state_admin_id: validStateAdminId // Uses the real ID found in step 2
+        state_admin_id: validStateAdminId
       });
 
     if (dbError) {
+      // Rollback: Delete the auth user if DB insert fails so we don't have orphan users
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       console.error("DB Insert Failed:", dbError);
       return NextResponse.json({ error: 'Database error', details: dbError }, { status: 500 });
