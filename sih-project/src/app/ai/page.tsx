@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Languages } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "../components/ModeToggle";
@@ -27,7 +27,11 @@ export default function AIPage() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,6 +40,146 @@ export default function AIPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize audio element
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => setIsSpeaking(false);
+      audioRef.current.onerror = () => setIsSpeaking(false);
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+    };
+  }, []);
+
+  // TTS function with API fallback to browser TTS
+  const speakText = async (text: string, lang: string = selectedLanguage) => {
+    // Remove markdown syntax for cleaner speech
+    const cleanText = text
+      .replace(/[#*_`\[\]]/g, "")
+      .replace(/\n+/g, ". ")
+      .trim();
+
+    if (!cleanText) return;
+
+    setIsSpeaking(true);
+
+    try {
+      // Try API first
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: cleanText,
+          languageCode: lang,
+        }),
+      });
+
+      const data = await response.json();
+      
+      // Check if we should use browser TTS
+      if (data.useBrowserTTS || !data.audioContent) {
+        // Use browser's Web Speech API with better voice selection
+        useBrowserTTS(cleanText, lang);
+      } else {
+        // Use API audio
+        if (!audioRef.current) return;
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        
+        const audioBlob = await fetch(`data:audio/mpeg;base64,${data.audioContent}`).then(r => r.blob());
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        audioRef.current.src = audioUrl;
+        await audioRef.current.play();
+      }
+    } catch (error) {
+      console.error("TTS Error, falling back to browser:", error);
+      // Fallback to browser TTS
+      useBrowserTTS(cleanText, lang);
+    }
+  };
+
+  // Browser-based TTS with improved voice selection
+  const useBrowserTTS = (text: string, lang: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    // Get available voices
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Find the best voice for the language
+    let selectedVoice = voices.find(voice => voice.lang === lang);
+    
+    // Fallback: try to find any voice that starts with the language code
+    if (!selectedVoice) {
+      const langCode = lang.split("-")[0];
+      selectedVoice = voices.find(voice => voice.lang.startsWith(langCode));
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    // Stop audio element
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
+    // Stop browser speech synthesis
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  };
+
+  const toggleAutoSpeak = () => {
+    setAutoSpeak(!autoSpeak);
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+  };
+
+  // Language options for TTS
+  const languages = [
+    { code: "en-US", name: "English (US)" },
+    { code: "en-GB", name: "English (UK)" },
+    { code: "hi-IN", name: "हिन्दी (Hindi)" },
+    { code: "bn-IN", name: "বাংলা (Bengali)" },
+    { code: "ta-IN", name: "தமிழ் (Tamil)" },
+    { code: "te-IN", name: "తెలుగు (Telugu)" },
+    { code: "mr-IN", name: "मराठी (Marathi)" },
+    { code: "es-ES", name: "Español (Spanish)" },
+    { code: "fr-FR", name: "Français (French)" },
+    { code: "de-DE", name: "Deutsch (German)" },
+    { code: "ja-JP", name: "日本語 (Japanese)" },
+    { code: "zh-CN", name: "中文 (Chinese)" },
+    { code: "ar-XA", name: "العربية (Arabic)" },
+    { code: "pt-BR", name: "Português (Portuguese)" },
+    { code: "ru-RU", name: "Русский (Russian)" },
+    { code: "ko-KR", name: "한국어 (Korean)" },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,10 +230,12 @@ export default function AIPage() {
       const decoder = new TextDecoder();
       let done = false;
 
+      let fullContent = "";
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         const chunkValue = decoder.decode(value, { stream: true });
+        fullContent += chunkValue;
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -98,6 +244,11 @@ export default function AIPage() {
               : msg
           )
         );
+      }
+
+      // Auto-speak the complete AI response
+      if (autoSpeak && fullContent) {
+        setTimeout(() => speakText(fullContent), 300);
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -124,7 +275,47 @@ export default function AIPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Powered by Garuda AI</p>
           </div>
         </div>
-        <ModeToggle />
+        <div className="flex items-center gap-2">
+          {/* Language Selector */}
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm">
+              <Languages size={16} className="text-slate-600 dark:text-slate-400" />
+              <span className="text-slate-700 dark:text-slate-300 hidden sm:inline">
+                {languages.find(l => l.code === selectedLanguage)?.name || "English"}
+              </span>
+            </button>
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 max-h-64 overflow-y-auto">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setSelectedLanguage(lang.code)}
+                  className={cn(
+                    "w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors",
+                    selectedLanguage === lang.code && "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  )}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto-speak Toggle */}
+          <button
+            onClick={toggleAutoSpeak}
+            className={cn(
+              "p-2 rounded-lg transition-all",
+              autoSpeak
+                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+            )}
+            title={autoSpeak ? "Auto-speak enabled" : "Auto-speak disabled"}
+          >
+            {autoSpeak ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
+
+          <ModeToggle />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
@@ -195,13 +386,28 @@ export default function AIPage() {
                   {message.content}
                 </ReactMarkdown>
 
-                <div
-                  className={cn(
-                    "text-[10px] mt-2 opacity-70",
-                    message.role === "user" ? "text-blue-100" : "text-slate-400"
+                <div className="flex items-center justify-between mt-2">
+                  <div
+                    className={cn(
+                      "text-[10px] opacity-70",
+                      message.role === "user" ? "text-blue-100" : "text-slate-400"
+                    )}
+                  >
+                    {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                  {message.role === "ai" && message.content && (
+                    <button
+                      onClick={() => isSpeaking ? stopSpeaking() : speakText(message.content)}
+                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                    >
+                      {isSpeaking ? (
+                        <VolumeX size={14} className="text-slate-500 dark:text-slate-400" />
+                      ) : (
+                        <Volume2 size={14} className="text-slate-500 dark:text-slate-400" />
+                      )}
+                    </button>
                   )}
-                >
-                  {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </div>
               </div>
             </motion.div>
