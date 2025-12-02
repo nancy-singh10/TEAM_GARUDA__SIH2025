@@ -5,7 +5,7 @@ import { Send, Bot, User, Sparkles, Loader2, Volume2, VolumeX, Languages } from 
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { ModeToggle } from "../components/ModeToggle";
+import { ModeToggle } from "../../components/ModeToggle";
 
 // Inline cn utility to avoid import issues
 function cn(...inputs: ClassValue[]) {

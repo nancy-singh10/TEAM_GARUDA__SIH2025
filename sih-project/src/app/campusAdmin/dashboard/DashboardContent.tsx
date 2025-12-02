@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import SessionGreeting from './SessionGreeting';
 import TopMetricsRow from './TopMetricsRow';
 import AreaChart24h from './AreaChart24h';
 import ForecastDonut from './ForecastDonut';
 import EnergyMix from './EnergyMix';
-import SimulateButton from './SimulateButton';
-import { ModeToggle } from '@/app/components/ModeToggle';
 
 type Metrics = {
   renewable_percent: number;
@@ -90,41 +86,6 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Energy Dashboard</h1>
-            <SessionGreeting />
-          </div>
-          <div className="flex items-center gap-3">
-            <ModeToggle />
-            <SimulateButton />
-            <div className={`px-3 py-1 rounded-full text-sm font-medium border ${statusBg} ${statusText} ${statusBorder}`}>
-              {renewable.toFixed(2)}% Renewable
-            </div>
-            <a
-              href="/api/export-report"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 16l4-5m-4 5l-4-5m4 5V4m8 12v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4"
-                />
-              </svg>
-              Export Report
-            </a>
-            <Link href="/" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Logout</Link>
-          </div>
-        </div>
-
         <TopMetricsRow
           solar_kw={metrics.solar_kw}
           wind_kw={metrics.wind_kw}
