@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "EnergyFlow - Smart Campus Energy",
   description: "AI-powered energy management for modern campuses",
 };
-
+const flag = true;
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,9 +25,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
-      >
+        >
+        {flag ? <p>campus Admin</p> : <p>state admin</p>}
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -36,6 +38,7 @@ export default function RootLayout({
           >
             {children}
         </ThemeProvider>
+        <footer>Hello world</footer>
       </body>
     </html>
   );
