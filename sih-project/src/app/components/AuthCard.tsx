@@ -34,7 +34,7 @@ export function AuthCard({
   const [emailAddr, setEmailAddr] = useState("");
   const [campusLoadMin, setCampusLoadMin] = useState("");
   const [campusLoadMax, setCampusLoadMax] = useState("");
-  const [batterySources, setBatterySources] = useState("");
+  // REMOVED: const [batterySources, setBatterySources] = useState("");
   const [batteryCapacity, setBatteryCapacity] = useState("");
   const [windCapacity, setWindCapacity] = useState("");
   const [solarCapacity, setSolarCapacity] = useState("");
@@ -72,9 +72,8 @@ export function AuthCard({
 
         payload.campus_load_min = toNumber(campusLoadMin);
         payload.campus_load_max = toNumber(campusLoadMax);
-        payload.no_of_battery_sources = toNumber(batterySources);
+        // REMOVED: payload.no_of_battery_sources = toNumber(batterySources);
         
-        // FIXED: Use correct state variables here
         payload.solar_capacity = toNumber(solarCapacity);
         payload.wind_capacity = toNumber(windCapacity);
         payload.battery_capacity = toNumber(batteryCapacity);
@@ -284,19 +283,7 @@ export function AuthCard({
                             placeholder="100"
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Battery Sources</label>
-                          <input
-                            type="number"
-                            step="1"
-                            min="0"
-                            required
-                            value={batterySources}
-                            onChange={(e) => setBatterySources(e.target.value)}
-                            className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/50 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                            placeholder="2"
-                          />
-                        </div>
+                        {/* REMOVED: Battery Sources input field */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Solar Cap (kWh)</label>
                           <input
