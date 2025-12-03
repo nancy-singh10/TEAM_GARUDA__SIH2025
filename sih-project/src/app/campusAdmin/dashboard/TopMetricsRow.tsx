@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sun, Wind, Battery, Zap, ArrowRight } from 'lucide-react';
 
-type Props = {
+type TopMetricsProps = {
   solar_kw: number;
   wind_kw: number;
   battery_percent: number;
   grid_kw: number;
 };
 
-export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid_kw }: Props) {
+export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid_kw }: TopMetricsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {/* Solar Card */}
