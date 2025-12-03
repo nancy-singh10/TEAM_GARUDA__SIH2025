@@ -8,7 +8,7 @@ import { OSM } from "ol/source";
 import { Vector as VectorSource } from "ol/source";
 import { Point } from "ol/geom";
 import Feature from "ol/Feature";
-import { Icon, Style } from "ol/style";
+import { Circle as CircleStyle, Fill, Stroke, Style } from "ol/style";
 import Overlay from "ol/Overlay";
 import { fromLonLat } from "ol/proj";
 import { useTheme } from "next-themes";
@@ -37,30 +37,16 @@ export default function MapDashboard({ campuses, selectedCampus }) {
   const [map, setMap] = useState();
   const { theme } = useTheme();
 
-  // 1. Initialize Map
+  // Use a ref to access the vector source without triggering re-renders
+  const vectorSourceRef = useRef(new VectorSource());
+
+  // 1. Initialize Map (Run Once)
   useEffect(() => {
     if (!map) {
-      const features = campuses.map((campus) => {
-        const feature = new Feature({
-          geometry: new Point([campus.longitude, campus.latitude]).transform("EPSG:4326", "EPSG:3857"),
-          campusData: campus,
-        });
-        feature.setStyle(
-          new Style({
-            image: new Icon({
-              src: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-              scale: 0.05,
-            }),
-          })
-        );
-        return feature;
-      });
-
-      const vectorSource = new VectorSource({ features });
-      const vectorLayer = new VectorLayer({ source: vectorSource });
-      const tileLayer = new TileLayer({ 
+      const vectorLayer = new VectorLayer({ source: vectorSourceRef.current });
+      const tileLayer = new TileLayer({
         source: new OSM(),
-        className: 'ol-layer-osm' 
+        className: 'ol-layer-osm'
       });
 
       const overlayContainer = document.createElement("div");
@@ -91,7 +77,7 @@ export default function MapDashboard({ campuses, selectedCampus }) {
         if (evt.dragging) {
           return;
         }
-        
+
         // Check if we are hovering over a feature
         const hit = initialMap.forEachFeatureAtPixel(evt.pixel, function (feature) {
           return feature;
@@ -107,13 +93,11 @@ export default function MapDashboard({ campuses, selectedCampus }) {
           overlay.setPosition(evt.coordinate);
         } else {
           // Only close popup if we are NOT currently "locked" onto a selected campus from the table
-          // (This logic implies that if you just clicked a table row, the popup stays open 
-          // until you physically hover over a DIFFERENT empty area, effectively "clearing" it)
           overlay.setPosition(undefined);
         }
       });
 
-      // --- CLICK LOGIC (Optional, but good for mobile) ---
+      // --- CLICK LOGIC ---
       initialMap.on("singleclick", function (evt) {
         const feature = initialMap.forEachFeatureAtPixel(evt.pixel, (f) => f);
         if (feature) {
@@ -125,9 +109,40 @@ export default function MapDashboard({ campuses, selectedCampus }) {
 
       setMap(initialMap);
     }
-  }, [map, campuses]);
+  }, [map]);
 
-  // 2. ANIMATION LOGIC (Table Click -> Flight)
+  // 2. Update Features when campuses change
+  useEffect(() => {
+    const source = vectorSourceRef.current;
+    source.clear();
+
+    if (campuses && campuses.length > 0) {
+      const features = campuses.map((campus) => {
+        const feature = new Feature({
+          geometry: new Point([campus.longitude, campus.latitude]).transform("EPSG:4326", "EPSG:3857"),
+          campusData: campus,
+        });
+
+        feature.setStyle(
+          new Style({
+            image: new CircleStyle({
+              radius: 8,
+              fill: new Fill({ color: '#ef4444' }), // red-500
+              stroke: new Stroke({
+                color: '#ffffff',
+                width: 2,
+              }),
+            }),
+          })
+        );
+        return feature;
+      });
+
+      source.addFeatures(features);
+    }
+  }, [campuses]);
+
+  // 3. ANIMATION LOGIC (Table Click -> Flight)
   useEffect(() => {
     if (map && selectedCampus) {
       const view = map.getView();
@@ -157,7 +172,7 @@ export default function MapDashboard({ campuses, selectedCampus }) {
     }
   }, [selectedCampus, map]);
 
-  // 3. Dark Mode
+  // 4. Dark Mode
   useEffect(() => {
     if (mapRef.current) {
       const canvas = mapRef.current.querySelector('.ol-layer-osm canvas');
