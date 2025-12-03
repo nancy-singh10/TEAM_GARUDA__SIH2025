@@ -1,7 +1,6 @@
 "use client";
 import MapDashboard from "@/app/components/MapDashboard";
 import CampusRankingTable from "@/app/components/CampusRankingTable";
-import { ModeToggle } from "@/app/components/ModeToggle";
 
 export default function StateAdminDashboard() {
   return (
@@ -14,11 +13,8 @@ export default function StateAdminDashboard() {
             State Energy Overview
           </h1>
 
-          <div className="flex items-center gap-4">
-            <ModeToggle />
-            <div className="text-sm text-slate-500 dark:text-slate-400">
-              Real-time monitoring across all campuses
-            </div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            Real-time monitoring across all campuses
           </div>
         </div>
 
