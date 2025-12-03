@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -17,11 +18,17 @@ type CampusUser = {
 export default function HeaderCampus({ user }: { user: CampusUser | null }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // State to hold the user data, initialized with prop but can update from localStorage
   const [currentUser, setCurrentUser] = useState<CampusUser | null>(user);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // If no user prop (server failed to fetch), try client-side storage
@@ -115,8 +122,19 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
             </Link>
           </nav>
 
-          {/* Right Section: Profile */}
+          {/* Right Section: Theme Toggle & Profile */}
           <div className="flex items-center gap-4" ref={dropdownRef}>
+            {/* Theme Toggle */}
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+            )}
+
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
