@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Trophy, TrendingUp, Zap, Calendar, Award } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trophy, TrendingUp, Zap, Calendar, Award, MessageSquare, Send, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type CampusRanking = {
@@ -15,6 +15,89 @@ type CampusRanking = {
 
 export default function RankingClient({ initialRankings }: { initialRankings: CampusRanking[] }) {
     const [activeTab, setActiveTab] = useState<'monthly' | 'overall'>('monthly');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCampus, setSelectedCampus] = useState<CampusRanking | null>(null);
+    const [message, setMessage] = useState('');
+    const [sending, setSending] = useState(false);
+    const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Try to get state admin ID from cookie or local storage
+        const getCookie = (name: string) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop()?.split(';').shift();
+        };
+        const cookieId = getCookie('state_admin_id');
+        if (cookieId) {
+            setCurrentAdminId(cookieId);
+        } else {
+            // Fallback to localStorage if available (set during login)
+            try {
+                const session = localStorage.getItem('stateSessionUser');
+                if (session) {
+                    const user = JSON.parse(session);
+                    if (user.state_admin_id) setCurrentAdminId(user.state_admin_id);
+                }
+            } catch { }
+        }
+    }, []);
+
+    const handleOpenModal = (campus: CampusRanking) => {
+        setSelectedCampus(campus);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedCampus(null);
+        setMessage('');
+    };
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedCampus || !message.trim()) return;
+
+        // Use a fallback ID if currentAdminId is missing (e.g. for testing/demo)
+        // In production, you'd force a login or handle this error gracefully
+        const senderId = currentAdminId || '00000000-0000-0000-0000-000000000000';
+
+        setSending(true);
+        try {
+            const res = await fetch('/api/messages/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sender_id: senderId,
+                    receiver_id: selectedCampus.campus_admin_id,
+                    message: message,
+                    type: 'info'
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                let errorMessage = data.error || 'Failed to send';
+                if (data.details) {
+                    if (typeof data.details === 'string') {
+                        errorMessage += `: ${data.details}`;
+                    } else {
+                        errorMessage += `: ${JSON.stringify(data.details)}`;
+                    }
+                }
+                throw new Error(errorMessage);
+            }
+
+            alert('Message sent successfully!');
+            handleCloseModal();
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'An error occurred');
+        } finally {
+            setSending(false);
+        }
+    };
 
     // Sort based on active tab
     const sortedRankings = [...initialRankings].sort((a, b) => {
@@ -25,7 +108,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-10">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-10 relative">
             <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Header */}
@@ -40,8 +123,8 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                         <button
                             onClick={() => setActiveTab('monthly')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'monthly'
-                                    ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                 }`}
                         >
                             <Calendar className="w-4 h-4" />
@@ -50,8 +133,8 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                         <button
                             onClick={() => setActiveTab('overall')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'overall'
-                                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                 }`}
                         >
                             <Award className="w-4 h-4" />
@@ -82,6 +165,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                                     <th className="px-6 py-4 text-right">
                                         {activeTab === 'monthly' ? 'Monthly Tokens' : 'Total Tokens'}
                                     </th>
+                                    <th className="px-6 py-4 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -128,8 +212,8 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className={`inline-flex items-center gap-1.5 font-bold px-3 py-1 rounded-lg text-sm ${activeTab === 'monthly'
-                                                        ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                                                        : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+                                                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                                                    : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
                                                     }`}>
                                                     <Zap className="w-3.5 h-3.5 fill-current" />
                                                     {activeTab === 'monthly'
@@ -138,13 +222,22 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                                                     }
                                                 </div>
                                             </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => handleOpenModal(campus)}
+                                                    className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                                                    title="Send Message"
+                                                >
+                                                    <MessageSquare className="w-4 h-4" />
+                                                </button>
+                                            </td>
                                         </motion.tr>
                                     ))}
                                 </AnimatePresence>
 
                                 {sortedRankings.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                             No campuses found.
                                         </td>
                                     </tr>
@@ -154,6 +247,71 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                     </div>
                 </div>
             </div>
+
+            {/* Message Modal */}
+            <AnimatePresence>
+                {isModalOpen && selectedCampus && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleCloseModal}
+                            className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Send Message</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">To: {selectedCampus.campus_name}</p>
+                                    </div>
+                                    <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <X className="w-5 h-5 text-slate-500" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSendMessage} className="space-y-4">
+                                    <div>
+                                        <textarea
+                                            value={message}
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            placeholder="Type your message here..."
+                                            className="w-full h-32 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={sending || !message.trim()}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {sending ? 'Sending...' : (
+                                                <>
+                                                    <Send className="w-4 h-4" /> Send Message
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

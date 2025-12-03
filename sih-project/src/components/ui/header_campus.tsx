@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -15,12 +15,21 @@ type CampusUser = {
   campus_admin_id?: string;
 };
 
+type Notification = {
+  id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+};
+
 export default function HeaderCampus({ user }: { user: CampusUser | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // State to hold the user data, initialized with prop but can update from localStorage
@@ -47,11 +56,24 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
     }
   }, [user]);
 
+  // Fetch notifications
+  useEffect(() => {
+    if (currentUser?.campus_admin_id) {
+      fetch(`/api/messages/list?userId=${currentUser.campus_admin_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.messages) setNotifications(data.messages);
+        })
+        .catch(err => console.error('Failed to fetch notifications', err));
+    }
+  }, [currentUser]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
+        setIsNotificationsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -134,6 +156,54 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
             )}
+
+            {/* Notifications / Mailbox */}
+            <div className="relative">
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.some(n => !n.is_read) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900" />
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animation-fade-in origin-top-right z-50">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                    <span className="text-xs text-slate-500">{notifications.length} messages</span>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No new messages</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {notifications.map((notif) => (
+                          <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <div className="flex gap-3">
+                              <div className="mt-1 p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg h-fit text-blue-600 dark:text-blue-400">
+                                <MessageSquare className="w-3 h-3" />
+                              </div>
+                              <div>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">{notif.message}</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {new Date(notif.created_at).toLocaleDateString()} • State Admin
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="relative">
               <button
