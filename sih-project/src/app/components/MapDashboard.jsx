@@ -13,7 +13,6 @@ import Overlay from "ol/Overlay";
 import { fromLonLat } from "ol/proj";
 import { useTheme } from "next-themes";
 
-// Reusable Popup HTML
 const getPopupHtml = (campus) => `
   <div class="mb-3">
     <div class="flex justify-between items-center mb-2">
@@ -59,10 +58,9 @@ export default function MapDashboard({ campuses, selectedCampus }) {
 
       const vectorSource = new VectorSource({ features });
       const vectorLayer = new VectorLayer({ source: vectorSource });
-
       const tileLayer = new TileLayer({ 
         source: new OSM(),
-        className: 'ol-layer-osm'
+        className: 'ol-layer-osm' 
       });
 
       const overlayContainer = document.createElement("div");
@@ -88,14 +86,40 @@ export default function MapDashboard({ campuses, selectedCampus }) {
 
       initialMap.addOverlay(overlay);
 
+      // --- HOVER INTERACTION LOGIC ---
+      initialMap.on("pointermove", function (evt) {
+        if (evt.dragging) {
+          return;
+        }
+        
+        // Check if we are hovering over a feature
+        const hit = initialMap.forEachFeatureAtPixel(evt.pixel, function (feature) {
+          return feature;
+        });
+
+        // Change cursor style
+        initialMap.getTargetElement().style.cursor = hit ? "pointer" : "";
+
+        // Show/Hide Popup
+        if (hit) {
+          const campus = hit.get("campusData");
+          overlayContentRef.current.innerHTML = getPopupHtml(campus);
+          overlay.setPosition(evt.coordinate);
+        } else {
+          // Only close popup if we are NOT currently "locked" onto a selected campus from the table
+          // (This logic implies that if you just clicked a table row, the popup stays open 
+          // until you physically hover over a DIFFERENT empty area, effectively "clearing" it)
+          overlay.setPosition(undefined);
+        }
+      });
+
+      // --- CLICK LOGIC (Optional, but good for mobile) ---
       initialMap.on("singleclick", function (evt) {
         const feature = initialMap.forEachFeatureAtPixel(evt.pixel, (f) => f);
         if (feature) {
           const campus = feature.get("campusData");
-          overlayContainer.innerHTML = getPopupHtml(campus);
+          overlayContentRef.current.innerHTML = getPopupHtml(campus);
           overlay.setPosition(evt.coordinate);
-        } else {
-          overlay.setPosition(undefined);
         }
       });
 
@@ -103,37 +127,27 @@ export default function MapDashboard({ campuses, selectedCampus }) {
     }
   }, [map, campuses]);
 
-  // 2. LOGIC CHANGE: The "Flight" Animation
+  // 2. ANIMATION LOGIC (Table Click -> Flight)
   useEffect(() => {
     if (map && selectedCampus) {
       const view = map.getView();
       const coords = fromLonLat([selectedCampus.longitude, selectedCampus.latitude]);
       const currentZoom = view.getZoom();
 
-      // Update Popup Content immediately
+      // Show Popup immediately at target
       if (overlayRef.current && overlayContentRef.current) {
         overlayContentRef.current.innerHTML = getPopupHtml(selectedCampus);
         overlayRef.current.setPosition(coords);
       }
 
-      // ANIMATION LOGIC
-      // If we are already zoomed in (zoom > 10), we do the "Arch" (Zoom out -> Move -> Zoom In)
       if (currentZoom && currentZoom > 10) {
+        // "Flight" Animation: Zoom out -> Pan -> Zoom In
         view.animate(
-          // Step 1: Zoom out slightly (to level 10) to give context
-          {
-            zoom: 10,
-            duration: 800, // Takes 0.8 seconds
-          },
-          // Step 2: Pan to new center AND Zoom in to level 14
-          {
-            center: coords,
-            zoom: 14,
-            duration: 1200, // Takes 1.2 seconds
-          }
+          { zoom: 10, duration: 800 },
+          { center: coords, zoom: 14, duration: 1200 }
         );
       } else {
-        // First click (Map is currently zoomed out): Just zoom directly in
+        // Simple Zoom In
         view.animate({
           center: coords,
           zoom: 14,
@@ -143,7 +157,7 @@ export default function MapDashboard({ campuses, selectedCampus }) {
     }
   }, [selectedCampus, map]);
 
-  // 3. Dark Mode Filter
+  // 3. Dark Mode
   useEffect(() => {
     if (mapRef.current) {
       const canvas = mapRef.current.querySelector('.ol-layer-osm canvas');
