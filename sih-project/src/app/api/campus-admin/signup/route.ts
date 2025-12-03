@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // 5. Insert into DB
-    const { error: dbError } = await supabaseAdmin
+    const { data: newUser, error: dbError } = await supabaseAdmin
       .from('campus_admin')
       .insert({
         username: data.username,
@@ -90,7 +90,9 @@ export async function POST(request: Request) {
         battery_capacity: data.battery_capacity,
         location: data.location,
         state_admin_id: validStateAdminId
-      });
+      })
+      .select()
+      .single();
 
     if (dbError) {
       // Rollback: Delete the auth user if DB insert fails so we don't have orphan users
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Database error', details: dbError }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, user: newUser });
 
   } catch (e: any) {
     console.error("Signup Error:", e);
