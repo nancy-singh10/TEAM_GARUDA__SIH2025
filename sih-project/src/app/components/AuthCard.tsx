@@ -63,7 +63,7 @@ export function AuthCard({
       if (mode === "signup" && variant === "consumer") {
         payload.campus_name = campusName || "Unnamed Campus";
         payload.admin_name = adminName || undefined;
-        
+
         // Ensure email is undefined if empty string to avoid Zod validation error
         payload.email = emailAddr === "" ? undefined : emailAddr;
 
@@ -73,11 +73,11 @@ export function AuthCard({
         payload.campus_load_min = toNumber(campusLoadMin);
         payload.campus_load_max = toNumber(campusLoadMax);
         // REMOVED: payload.no_of_battery_sources = toNumber(batterySources);
-        
+
         payload.solar_capacity = toNumber(solarCapacity);
         payload.wind_capacity = toNumber(windCapacity);
         payload.battery_capacity = toNumber(batteryCapacity);
-        
+
         payload.location = location || undefined;
       }
 
@@ -95,18 +95,27 @@ export function AuthCard({
         // If validation error exists, show the first one to be helpful
         let errorMsg = json.error || 'Request failed';
         if (json.details?.fieldErrors) {
-            const firstField = Object.keys(json.details.fieldErrors)[0];
-            const firstMsg = json.details.fieldErrors[firstField][0];
-            errorMsg = `${firstField}: ${firstMsg}`;
+          const firstField = Object.keys(json.details.fieldErrors)[0];
+          const firstMsg = json.details.fieldErrors[firstField][0];
+          errorMsg = `${firstField}: ${firstMsg}`;
         }
         setError(errorMsg);
       } else {
         setError(null);
         // Store lightweight session
-        try { localStorage.setItem('sessionUser', JSON.stringify(json.user)); } catch {}
-        
+        try {
+          localStorage.setItem('sessionUser', JSON.stringify(json.user));
+          // Set cookie for server-side access (layout.tsx)
+          if (json.user?.campus_admin_id) {
+            document.cookie = `campus_admin_id=${json.user.campus_admin_id}; path=/; max-age=86400; SameSite=Lax`;
+          }
+        } catch { }
+
         const dashboard = variant === 'admin' ? '/stateAdmin/dashboard' : '/campusAdmin/dashboard';
-        router.push(dashboard);
+
+        // Use window.location.href to force a hard navigation. 
+        // This ensures the new cookie is sent to the server and the layout is re-rendered with the correct user.
+        window.location.href = dashboard;
       }
     } catch (err: any) {
       setError(err.message || 'Unexpected error');
@@ -131,13 +140,13 @@ export function AuthCard({
       {backLink && (
         <div className="absolute top-6 left-6 z-20">
           <a href={backLink.href} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
             {backLink.label}
           </a>
         </div>
       )}
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -149,7 +158,7 @@ export function AuthCard({
               {icon || <span className="text-3xl">{variant === "admin" ? "🛡️" : "⚡"}</span>}
             </div>
           </div>
-          
+
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h2>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
@@ -159,21 +168,19 @@ export function AuthCard({
           <div className="grid grid-cols-2 p-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/50 mb-8 border border-slate-200 dark:border-white/5">
             <button
               onClick={() => setMode("login")}
-              className={`py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                mode === "login" 
-                  ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm" 
+              className={`py-2 text-sm font-medium rounded-lg transition-all duration-200 ${mode === "login"
+                  ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
+                }`}
             >
               Login
             </button>
             <button
               onClick={() => setMode("signup")}
-              className={`py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                mode === "signup" 
-                  ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm" 
+              className={`py-2 text-sm font-medium rounded-lg transition-all duration-200 ${mode === "signup"
+                  ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
+                }`}
             >
               Sign Up
             </button>
@@ -342,7 +349,7 @@ export function AuthCard({
             </AnimatePresence>
 
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm text-center"

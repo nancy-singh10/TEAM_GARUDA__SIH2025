@@ -26,57 +26,55 @@ export default function ProfileButton() {
 
   const fetchAdminProfile = async () => {
     try {
-      // Fetch the first campus admin (or use auth logic to get specific user)
-      const { data, error, count } = await supabase
-        .from("campus_admin")
-        .select("campus_admin_id, username, campus_name, email, location, admin_name", { count: 'exact' })
-        .limit(1)
-        .maybeSingle();
+      // 1. Try to get user from localStorage (set by AuthCard)
+      let userId = null;
+      try {
+        const sessionStr = localStorage.getItem('sessionUser');
+        if (sessionStr) {
+          const sessionUser = JSON.parse(sessionStr);
+          // The auth card returns the full user object from the DB
+          if (sessionUser && sessionUser.campus_admin_id) {
+            setAdmin(sessionUser);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing session:", e);
+      }
 
-      if (error) {
-        console.error("Supabase error details:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        // Set a default admin if there's an error
-        setAdmin({
-          campus_admin_id: 1,
-          username: "admin",
-          campus_name: "Default Campus",
-          email: "admin@campus.edu",
-          location: "Campus Location",
-          admin_name: "Campus Administrator"
-        });
+      // 2. Fallback: Try Supabase Auth (if you switch to full Supabase Auth later)
+      const { data: { user } } = await supabase.auth.getUser();
+
+      let query = supabase.from("campus_admin").select("campus_admin_id, username, campus_name, email, location, admin_name");
+
+      if (user) {
+        // If linked by email or auth_id (assuming you might add this later)
+        query = query.eq('email', user.email);
+      } else if (userId) {
+        query = query.eq('campus_admin_id', userId);
+      } else {
+        // 3. Last resort: Check for cookie (if set by server actions)
+        // This is client-side, so we can't read httpOnly cookies easily, 
+        // but if you set a readable cookie, we could use it.
+        // For now, if no login found, we shouldn't show a random profile.
+        console.log("No logged in user found");
+        setLoading(false);
         return;
       }
-      
+
+      const { data, error } = await query.maybeSingle();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
+
       if (data) {
         setAdmin(data);
-      } else {
-        // No admin found, create a default one for demo
-        console.log("No admin found in database, using default");
-        setAdmin({
-          campus_admin_id: 1,
-          username: "admin",
-          campus_name: "Default Campus",
-          email: "admin@campus.edu",
-          location: "Campus Location",
-          admin_name: "Campus Administrator"
-        });
       }
     } catch (error: any) {
       console.error("Error fetching admin profile:", error);
-      // Fallback to default
-      setAdmin({
-        campus_admin_id: 1,
-        username: "admin",
-        campus_name: "Default Campus",
-        email: "admin@campus.edu",
-        location: "Campus Location",
-        admin_name: "Campus Administrator"
-      });
     } finally {
       setLoading(false);
     }

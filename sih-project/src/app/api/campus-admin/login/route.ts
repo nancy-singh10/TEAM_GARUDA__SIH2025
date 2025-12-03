@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseServer'; // ✅ FIXED: Added curly braces
+import supabaseAdmin from '@/lib/supabaseServer'; // Assuming default export based on previous steps
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     const { username, password } = parsed.data;
 
-    // ✅ FIXED: Check BOTH username and email columns using .or()
+    // 1. Fetch User
     const { data: user, error } = await supabaseAdmin
       .from('campus_admin')
       .select('campus_admin_id, username, password, campus_name, email')
@@ -42,8 +42,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // 3. Success
-    return NextResponse.json({ 
+    // 3. Create Response & SET COOKIE
+    const response = NextResponse.json({ 
         success: true, 
         user: { 
             id: user.campus_admin_id, 
@@ -51,6 +51,17 @@ export async function POST(request: Request) {
             campus_name: user.campus_name 
         } 
     });
+
+    // THIS IS THE MISSING PART
+    response.cookies.set({
+        name: 'campus_admin_id',
+        value: user.campus_admin_id.toString(),
+        httpOnly: true, // Secure: Client JS cannot read it
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    return response;
 
   } catch (e: any) {
     console.error("Login Server Error:", e);
