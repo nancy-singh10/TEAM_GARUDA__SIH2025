@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { 
   ResizableHandle, 
   ResizablePanel, 
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import CampusVisualizer from "./CampusVisualizer"; 
 import { BuildingData } from "./types";
 
-// --- 1. LOGIC HOOK (Integrated directly into Dashboard) ---
+// --- 1. LOGIC HOOK ---
 const useDashboardLogic = () => {
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState(new Date());
@@ -31,7 +31,7 @@ const useDashboardLogic = () => {
   const [campusId, setCampusId] = useState<number | null>(null);
   const [buildings, setBuildings] = useState<BuildingData[]>([]);
   
-  // Capacities (Fetched from DB)
+  // Capacities (Default fallbacks)
   const [capacities, setCapacities] = useState({
     solar: 500,
     wind: 500,
@@ -46,15 +46,15 @@ const useDashboardLogic = () => {
     now.setMinutes(0, 0, 0);
     setTime(now);
 
-    // 1. Load User Session & Fetch Data
+    // Load User & Fetch Data
     const storedSession = localStorage.getItem("sessionUser");
     if (storedSession) {
         try {
             const user = JSON.parse(storedSession);
             if (user?.id) {
                 setCampusId(user.id);
-                fetchCampusData(user.id);
-                fetchBuildings(user.id);
+                fetchCampusData(user.id); // Fetch Capacities
+                fetchBuildings(user.id);  // Fetch Buildings
             }
         } catch(e) { console.error("Session error", e); }
     }
@@ -63,9 +63,13 @@ const useDashboardLogic = () => {
   // --- API CALLS ---
   const fetchCampusData = async (id: number) => {
       try {
-          // Fetches capacities (Solar/Wind/Battery limits) from the campus_admin table
-          // Ensure you have created src/app/api/campus-admin/capacity/route.ts
-          const res = await fetch(`/api/campus-admin/capacity?id=${id}`);
+          // UPDATED: Using POST to match your existing backend
+          const res = await fetch(`/api/campus-admin/capacity`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ campus_id: id })
+          });
+          
           if (res.ok) {
              const data = await res.json();
              setCapacities({
@@ -74,20 +78,16 @@ const useDashboardLogic = () => {
                  battery: Number(data.battery_capacity) || 2000,
                  loadMax: Number(data.campus_load_max) || 1000
              });
-          } else {
-             console.warn("Could not fetch capacities, using defaults.");
           }
       } catch (e) { console.error("Capacity fetch error", e); }
   };
 
   const fetchBuildings = async (id: number) => {
       try {
-          // Fetches the saved layout from campus_buildings table
           const res = await fetch(`/api/iot/buildings?campus_id=${id}`);
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data)) {
-                // Map DB snake_case to Frontend camelCase
                 const mapped = data.map((b: any) => ({
                     id: b.id,
                     type: b.type,
@@ -96,7 +96,7 @@ const useDashboardLogic = () => {
                     name: b.name,
                     baseLoad: b.base_load,
                     priority: b.priority,
-                    renewableRatio: 0, // Calculated live below
+                    renewableRatio: 0, 
                     status: b.status
                 }));
                 setBuildings(mapped);
@@ -108,9 +108,8 @@ const useDashboardLogic = () => {
   const saveBuildingsToDB = async (updatedBuildings: BuildingData[]) => {
       if (!campusId) return;
       try {
-          // Prepares payload for DB
           const payload = updatedBuildings.map(b => ({
-              id: b.id.length > 10 ? b.id : undefined, // Send ID only if it's a UUID (simple check)
+              id: b.id.length > 10 ? b.id : undefined, 
               type: b.type,
               name: b.name,
               baseLoad: b.baseLoad,
@@ -132,7 +131,6 @@ const useDashboardLogic = () => {
     setIsSaving(true);
     if(!campusId) return;
     try {
-      // Logs simulation history to campus_history table
       await fetch('/api/iot/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,41 +140,34 @@ const useDashboardLogic = () => {
     finally { setIsSaving(false); }
   };
 
-  // --- CALCULATION LOGIC ---
-  
-  // 1. Calculate Total Load (Summation of all buildings)
+  // --- CORE LOGIC ---
   const totalLoad = buildings.reduce((sum, b) => sum + b.baseLoad, 0);
 
-  // 2. Waterfall Logic: Distribute Green Energy based on Priority
   const calculateBuildingStatus = () => {
-      // Battery acts as buffer: if > 10%, we assume we can draw from it to stabilize grid
       const availableGreenPower = solar + wind + (battery > 10 ? 500 : 0); 
       let remainingGreen = availableGreenPower;
 
-      // Sort: High Priority gets green energy first
       const sorted = [...buildings].sort((a, b) => {
           if (a.priority === "HIGH" && b.priority !== "HIGH") return -1;
           if (a.priority !== "HIGH" && b.priority === "HIGH") return 1;
           return 0;
       });
 
-      // Distribute Power
       const statusMap = new Map();
       sorted.forEach(b => {
           let ratio = 0;
           if (remainingGreen >= b.baseLoad) {
-              ratio = 1; // 100% Green
+              ratio = 1; 
               remainingGreen -= b.baseLoad;
           } else if (remainingGreen > 0) {
-              ratio = remainingGreen / b.baseLoad; // Partial Green
+              ratio = remainingGreen / b.baseLoad; 
               remainingGreen = 0;
           } else {
-              ratio = 0; // 100% Grid
+              ratio = 0; 
           }
           statusMap.set(b.id, ratio);
       });
 
-      // Return buildings in original order but with updated status
       return buildings.map(b => ({
           ...b,
           renewableRatio: statusMap.get(b.id) || 0
@@ -185,7 +176,6 @@ const useDashboardLogic = () => {
 
   const processedBuildings = calculateBuildingStatus();
 
-  // Wrapper to update state AND save to DB
   const handleSetBuildings = (newBuildings: BuildingData[]) => {
       setBuildings(newBuildings);
       saveBuildingsToDB(newBuildings);
@@ -220,7 +210,6 @@ const useDashboardLogic = () => {
     setWind(newWind);
     setBattery(newBattery);
 
-    // Auto-save history on every tick
     if(isAutoPilot) saveDataToBackend(newSolar, newWind, totalLoad, newBattery);
   };
 
@@ -238,7 +227,6 @@ const useDashboardLogic = () => {
     }
   };
 
-  // Dynamic Gradient Background
   const getGradientClass = () => {
     if (!mounted) return "bg-slate-50 dark:bg-[#0d1117]";
     const totalGen = solar + wind;
@@ -295,7 +283,6 @@ const CurrentStateSection = ({ data, onExpand, isExpanded }: any) => {
   return (
     <div className={cn("h-full w-full flex flex-col border-r border-slate-200 dark:border-slate-800 transition-colors duration-1000 relative group/panel", getGradientClass())}>
       
-      {/* Full Screen Button */}
       <button onClick={onExpand} className="absolute top-2 right-2 p-1.5 bg-black/20 text-white rounded opacity-50 hover:opacity-100 transition-opacity z-50" title={isExpanded ? "Minimize" : "Full Screen"}>
          {isExpanded ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
       </button>
@@ -420,7 +407,7 @@ const CurrentStateSection = ({ data, onExpand, isExpanded }: any) => {
 // --- 3. MIDDLE PANEL ---
 const PlaygroundSection = ({ buildings, setBuildings, totalAvailablePower, isExpanded, onExpand }: any) => (
   <div className="h-full w-full bg-white dark:bg-[#0f1115] relative flex flex-col group/panel">
-    <button onClick={onExpand} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded opacity-50 hover:opacity-100 transition-opacity z-50" title={isExpanded ? "Minimize" : "Full Screen"}>
+    <button onClick={onExpand} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded opacity-0 group-hover/panel:opacity-100 transition-opacity z-50" title={isExpanded ? "Minimize" : "Full Screen"}>
          {isExpanded ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
     </button>
     <CampusVisualizer 
@@ -434,7 +421,7 @@ const PlaygroundSection = ({ buildings, setBuildings, totalAvailablePower, isExp
 // --- 4. RIGHT PANEL ---
 const PredictionSection = ({ isExpanded, onExpand }: any) => (
   <div className="h-full w-full bg-slate-50 dark:bg-[#0d1117] p-4 border-l border-slate-200 dark:border-slate-800 relative group/panel">
-    <button onClick={onExpand} className="absolute top-2 right-2 p-1.5 bg-black/20 text-white rounded opacity-50 hover:opacity-100 transition-opacity z-50" title={isExpanded ? "Minimize" : "Full Screen"}>
+    <button onClick={onExpand} className="absolute top-2 right-2 p-1.5 bg-black/20 text-white rounded opacity-0 group-hover/panel:opacity-100 transition-opacity z-50" title={isExpanded ? "Minimize" : "Full Screen"}>
          {isExpanded ? <Minimize2 size={16}/> : <Maximize2 size={16}/>}
     </button>
     <div className="flex items-center gap-2 mb-6 text-purple-600 dark:text-purple-400">
@@ -468,7 +455,8 @@ export default function DashboardPage() {
       </header>
 
       <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
+        {/* KEY PROP is the fix for the minimize layout bug */}
+        <ResizablePanelGroup direction="horizontal" key={fullScreenPanel || "default"}>
           
           {(fullScreenPanel === null || fullScreenPanel === "LEFT") && (
             <ResizablePanel defaultSize={25} minSize={20} maxSize={fullScreenPanel === "LEFT" ? 100 : 35} className={cn(fullScreenPanel === "LEFT" && "flex-1")}>
