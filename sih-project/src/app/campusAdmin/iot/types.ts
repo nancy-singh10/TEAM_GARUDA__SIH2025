@@ -7,13 +7,14 @@ export interface BuildingData {
   y: number;
   name: string;
   baseLoad: number; // In kW
-  priority: "HIGH" | "MEDIUM" | "LOW";
-  status: "re" | "grid"; // re = renewable, grid = grid power
+  priority: "HIGH" | "LOW"; // Simplified to 2 priorities as requested
+  renewableRatio: number; // 0 to 1 (e.g., 0.4 = 40% green)
 }
 
-export const BUILDING_TEMPLATES: Record<BuildingType, Omit<BuildingData, "id" | "x" | "y" | "status">> = {
+// Templates now serve as "Defaults" for the popup
+export const BUILDING_TEMPLATES: Record<BuildingType, Omit<BuildingData, "id" | "x" | "y" | "renewableRatio">> = {
   HOSTEL: { name: "Boys Hostel", baseLoad: 150, priority: "HIGH" },
-  LAB: { name: "Chemistry Lab", baseLoad: 300, priority: "MEDIUM" },
+  LAB: { name: "Chemistry Lab", baseLoad: 300, priority: "LOW" },
   CLASSROOM: { name: "Lecture Hall", baseLoad: 50, priority: "LOW" },
   ADMIN: { name: "Admin Block", baseLoad: 100, priority: "HIGH" },
 };

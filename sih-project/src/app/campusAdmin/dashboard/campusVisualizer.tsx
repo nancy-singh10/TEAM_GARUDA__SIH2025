@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Building2, FlaskConical, Home, GraduationCap, Plus, Trash2 } from "lucide-react";
-import { BuildingData, BuildingType, BUILDING_TEMPLATES } from "./types";
+import { BuildingData, BuildingType, BUILDING_TEMPLATES } from "../iot/types";
 import { cn } from "@/lib/utils";
 
 // --- Icons Helper ---
