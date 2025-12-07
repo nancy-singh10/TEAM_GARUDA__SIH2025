@@ -113,6 +113,7 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
               { name: 'Ranking', href: '/stateAdmin/campusRanking', icon: Trophy },
               { name: 'Broadcast', href: '/stateAdmin/broadcast', icon: Radio },
               { name: 'Tokens', href: '/stateAdmin/tokens', icon: Coins },
+              { name: 'Business Model', href: '/stateAdmin/businessModel', icon: Building },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -120,8 +121,8 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
                   key={link.href}
                   href={link.href}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'bg-blue-500 text-white shadow-sm shadow-blue-200'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-blue-500 text-white shadow-sm shadow-blue-200'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                 >
                   <link.icon className="w-4 h-4" />
