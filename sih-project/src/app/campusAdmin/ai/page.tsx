@@ -86,7 +86,7 @@ export default function AIPage() {
       });
 
       const data = await response.json();
-      
+
       // Check if we should use browser TTS
       if (data.useBrowserTTS || !data.audioContent) {
         // Use browser's Web Speech API with better voice selection
@@ -96,10 +96,10 @@ export default function AIPage() {
         if (!audioRef.current) return;
         audioRef.current.pause();
         audioRef.current.src = "";
-        
+
         const audioBlob = await fetch(`data:audio/mpeg;base64,${data.audioContent}`).then(r => r.blob());
         const audioUrl = URL.createObjectURL(audioBlob);
-        
+
         audioRef.current.src = audioUrl;
         await audioRef.current.play();
       }
@@ -121,10 +121,10 @@ export default function AIPage() {
 
     // Get available voices
     const voices = window.speechSynthesis.getVoices();
-    
+
     // Find the best voice for the language
     let selectedVoice = voices.find(voice => voice.lang === lang);
-    
+
     // Fallback: try to find any voice that starts with the language code
     if (!selectedVoice) {
       const langCode = lang.split("-")[0];
@@ -320,7 +320,7 @@ export default function AIPage() {
             {autoSpeak ? <Volume2 size={20} /> : <VolumeX size={20} />}
           </button>
 
-          <ModeToggle />
+          {/* <ModeToggle /> */}
         </div>
       </div>
 
@@ -347,7 +347,7 @@ export default function AIPage() {
               >
                 {message.role === "user" ? <User size={16} /> : <Bot size={16} />}
               </div>
-              
+
               {/* Message Bubble */}
               <div
                 className={cn(
@@ -463,9 +463,9 @@ export default function AIPage() {
           </button>
         </form>
         <div className="text-center mt-2">
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-                AI can make mistakes. Please verify important information.
-            </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            AI can make mistakes. Please verify important information.
+          </p>
         </div>
       </div>
     </div>
