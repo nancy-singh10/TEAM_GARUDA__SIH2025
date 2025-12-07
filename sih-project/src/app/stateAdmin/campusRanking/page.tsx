@@ -42,7 +42,7 @@ async function getCampusRankings() {
 
     // We need wallet_ids to query transactions efficiently
     const validWalletIds = wallets?.map(w => w.wallet_id) || [];
-    let monthlyStats: Record<string, number> = {};
+    const monthlyStats: Record<string, number> = {};
 
     if (validWalletIds.length > 0) {
         const { data: transactions } = await supabaseAdmin

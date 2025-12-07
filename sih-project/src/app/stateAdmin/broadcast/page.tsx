@@ -47,7 +47,7 @@ export default function BroadcastPage() {
 
             setStatus({ type: 'success', message: `Successfully sent to ${data.count} campus admins!` });
             setMessage('');
-        } catch (error: any) {
+        } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             setStatus({ type: 'error', message: error.message });
         } finally {
             setLoading(false);

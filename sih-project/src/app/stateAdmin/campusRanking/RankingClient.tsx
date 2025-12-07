@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, Zap, Calendar, Award, MessageSquare, Send, X } from 'lucide-react';
+import { Trophy, Zap, Calendar, Award, MessageSquare, Send, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type CampusRanking = {
@@ -23,7 +23,6 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
     const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
 
     useEffect(() => {
-        // ... (rest of useEffect remains same)
         const getCookie = (name: string) => {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -43,7 +42,47 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
         }
     }, []);
 
-    // ... (handlers remain same)
+    const handleOpenModal = (campus: CampusRanking) => {
+        setSelectedCampus(campus);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedCampus(null);
+        setMessage('');
+    };
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedCampus || !currentAdminId) return;
+
+        setSending(true);
+        try {
+            const res = await fetch('/api/messages/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sender_id: currentAdminId,
+                    recipient_id: selectedCampus.campus_admin_id,
+                    message,
+                    type: 'info'
+                })
+            });
+
+            if (res.ok) {
+                alert('Message sent successfully!');
+                handleCloseModal();
+            } else {
+                alert('Failed to send message');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error sending message');
+        } finally {
+            setSending(false);
+        }
+    };
 
     // Sort based on active tab
     const sortedRankings = [...initialRankings].sort((a, b) => {
@@ -104,7 +143,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-50/50 dark:bg-slate-800/20 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                <tr>
+                                <tr className="border-b border-slate-100 dark:border-slate-800">
                                     <th className="px-6 py-4 w-20 text-center">Rank</th>
                                     <th className="px-6 py-4">Campus Details</th>
                                     <th className="px-6 py-4 hidden md:table-cell">Administrator</th>
