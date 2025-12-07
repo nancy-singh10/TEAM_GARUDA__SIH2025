@@ -139,18 +139,27 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/campusAdmin/dashboard" className="flex items-center gap-2 px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-emerald-200">
-              <LayoutDashboard className="w-4 h-4" /> Dashboard
-            </Link>
-            <Link href="/campusAdmin/iot" className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">
-              <Radio className="w-4 h-4" /> IoT
-            </Link>
-            <Link href="/campusAdmin/ai" className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">
-              <Bot className="w-4 h-4" /> Chatbot
-            </Link>
-            <Link href="/campusAdmin/export" className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">
-              <Download className="w-4 h-4" /> Export Report
-            </Link>
+            {[
+              { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
+              { name: 'IoT', href: '/campusAdmin/iot', icon: Radio },
+              { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
+              { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
+            ].map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                >
+                  <link.icon className="w-4 h-4" />
+                  {link.name}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right Section: Theme Toggle & Profile */}
@@ -201,8 +210,8 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${notif.type === 'alert' ? 'bg-red-100 text-red-700' :
-                                      notif.type === 'warning' ? 'bg-amber-100 text-amber-700' :
-                                        'bg-blue-100 text-blue-700'
+                                    notif.type === 'warning' ? 'bg-amber-100 text-amber-700' :
+                                      'bg-blue-100 text-blue-700'
                                     }`}>
                                     {notif.type || 'Info'}
                                   </span>
