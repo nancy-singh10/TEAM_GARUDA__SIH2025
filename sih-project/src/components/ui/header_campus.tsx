@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -142,6 +142,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
             {[
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'IoT', href: '/campusAdmin/iot', icon: Radio },
+              { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
               { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
             ].map((link) => {
@@ -151,8 +152,8 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                   key={link.href}
                   href={link.href}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                 >
                   <link.icon className="w-4 h-4" />
