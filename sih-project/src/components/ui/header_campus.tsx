@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -96,7 +96,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
     // 2. Call logout API (Optional: Implement /api/campusAdmin/logout for HttpOnly cookies)
     try {
       await fetch('/api/campusAdmin/logout', { method: 'POST' });
-    } catch (e) {
+    } catch {
       // Ignore error if route doesn't exist yet
     }
 
