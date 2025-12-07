@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Coins, TrendingUp, Settings, Activity, DollarSign } from 'lucide-react';
+import { Coins, TrendingUp, Settings, Activity } from 'lucide-react';
 
 export default function TokenManagementPage() {
     const [loading, setLoading] = useState(true);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const [data, setData] = useState<any>(null);
     const [buyRate, setBuyRate] = useState(1.0); // Energy -> Token
     const [sellRate, setSellRate] = useState(1.0); // Token -> Energy
@@ -21,8 +22,8 @@ export default function TokenManagementPage() {
             setData(json);
             setBuyRate(json.settings.conversion_rate_energy_to_token);
             setSellRate(json.settings.conversion_rate_token_to_energy);
-        } catch (e) {
-            console.error(e);
+        } catch {
+            console.error("Error fetching tokens data");
         } finally {
             setLoading(false);
         }
@@ -45,7 +46,7 @@ export default function TokenManagementPage() {
             });
             alert('Rates updated successfully!');
             fetchData(); // Refresh
-        } catch (e) {
+        } catch {
             alert('Failed to update rates');
         } finally {
             setUpdating(false);
@@ -164,7 +165,7 @@ export default function TokenManagementPage() {
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${tx.type === 'MINT_REWARD' ? 'bg-green-100 text-green-700' :
-                                                    tx.type === 'BURN_PURCHASE' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                                                tx.type === 'BURN_PURCHASE' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
                                                 }`}>
                                                 {tx.type.replace('_', ' ').toLowerCase()}
                                             </span>
