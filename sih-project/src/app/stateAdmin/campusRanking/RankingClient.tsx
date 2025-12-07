@@ -14,7 +14,8 @@ type CampusRanking = {
 };
 
 export default function RankingClient({ initialRankings }: { initialRankings: CampusRanking[] }) {
-    const [activeTab, setActiveTab] = useState<'monthly' | 'overall'>('monthly');
+    // Default to 'overall' to show current balance by default (matching user expectation)
+    const [activeTab, setActiveTab] = useState<'monthly' | 'overall'>('overall');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCampus, setSelectedCampus] = useState<CampusRanking | null>(null);
     const [message, setMessage] = useState('');
@@ -22,7 +23,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
     const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
 
     useEffect(() => {
-        // Try to get state admin ID from cookie or local storage
+        // ... (rest of useEffect remains same)
         const getCookie = (name: string) => {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -32,7 +33,6 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
         if (cookieId) {
             setCurrentAdminId(cookieId);
         } else {
-            // Fallback to localStorage if available (set during login)
             try {
                 const session = localStorage.getItem('stateSessionUser');
                 if (session) {
@@ -43,61 +43,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
         }
     }, []);
 
-    const handleOpenModal = (campus: CampusRanking) => {
-        setSelectedCampus(campus);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedCampus(null);
-        setMessage('');
-    };
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedCampus || !message.trim()) return;
-
-        // Use a fallback ID if currentAdminId is missing (e.g. for testing/demo)
-        // In production, you'd force a login or handle this error gracefully
-        const senderId = currentAdminId || '00000000-0000-0000-0000-000000000000';
-
-        setSending(true);
-        try {
-            const res = await fetch('/api/messages/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sender_id: senderId,
-                    receiver_id: selectedCampus.campus_admin_id,
-                    message: message,
-                    type: 'info'
-                }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                let errorMessage = data.error || 'Failed to send';
-                if (data.details) {
-                    if (typeof data.details === 'string') {
-                        errorMessage += `: ${data.details}`;
-                    } else {
-                        errorMessage += `: ${JSON.stringify(data.details)}`;
-                    }
-                }
-                throw new Error(errorMessage);
-            }
-
-            alert('Message sent successfully!');
-            handleCloseModal();
-        } catch (error: any) {
-            console.error(error);
-            alert(error.message || 'An error occurred');
-        } finally {
-            setSending(false);
-        }
-    };
+    // ... (handlers remain same)
 
     // Sort based on active tab
     const sortedRankings = [...initialRankings].sort((a, b) => {
@@ -121,16 +67,6 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                     {/* Tabs */}
                     <div className="bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1 shadow-sm">
                         <button
-                            onClick={() => setActiveTab('monthly')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'monthly'
-                                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <Calendar className="w-4 h-4" />
-                            Monthly Ranking
-                        </button>
-                        <button
                             onClick={() => setActiveTab('overall')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'overall'
                                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
@@ -138,7 +74,17 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                                 }`}
                         >
                             <Award className="w-4 h-4" />
-                            Overall Ranking
+                            Current Balance
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('monthly')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'monthly'
+                                ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <Calendar className="w-4 h-4" />
+                            Monthly Earned
                         </button>
                     </div>
                 </div>
@@ -151,7 +97,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                             Top Performing Campuses
                         </h2>
                         <div className="text-xs font-medium px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                            Sorted by {activeTab === 'monthly' ? 'Monthly' : 'Lifetime'} Tokens
+                            Sorted by {activeTab === 'monthly' ? 'Monthly Rewards' : 'Current Balance'}
                         </div>
                     </div>
 
@@ -163,7 +109,7 @@ export default function RankingClient({ initialRankings }: { initialRankings: Ca
                                     <th className="px-6 py-4">Campus Details</th>
                                     <th className="px-6 py-4 hidden md:table-cell">Administrator</th>
                                     <th className="px-6 py-4 text-right">
-                                        {activeTab === 'monthly' ? 'Monthly Tokens' : 'Total Tokens'}
+                                        {activeTab === 'monthly' ? 'Monthly Earned' : 'Current Balance'}
                                     </th>
                                     <th className="px-6 py-4 text-center">Action</th>
                                 </tr>

@@ -143,7 +143,6 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'IoT', href: '/campusAdmin/iot', icon: Radio },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
-              { name: 'Model', href: '/campusAdmin/businessModel', icon: Building },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
               { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
             ].map((link) => {
