@@ -2,6 +2,7 @@
 
 import { FileDown, Download, Calendar, Filter, Zap, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
+import { exportToExcel, exportToCSV, exportToJSON, generateReportData } from "@/lib/exportUtils";
 
 export default function ExportReportPage() {
   const [dateRange, setDateRange] = useState("last-30-days");
@@ -14,9 +15,27 @@ export default function ExportReportPage() {
     { id: "renewable", name: "Renewable Energy Stats", icon: Zap },
   ];
 
+
+
   const handleExport = (format: string) => {
-    // TODO: Implement actual export logic
-    alert(`Exporting ${reportType} report as ${format.toUpperCase()} for ${dateRange}`);
+    // Generate data based on current selection
+    const data = generateReportData(reportType, dateRange);
+    const fileName = `Energy_Report_${reportType}_${dateRange}_${new Date().toISOString().split('T')[0]}`;
+
+    switch (format) {
+      case 'Excel':
+        exportToExcel(data, fileName);
+        break;
+      case 'CSV':
+        exportToCSV(data, fileName);
+        break;
+      case 'JSON':
+        exportToJSON(data, fileName);
+        break;
+      case 'PDF':
+        alert("PDF export is currently being implemented. Please use Excel or CSV for now.");
+        break;
+    }
   };
 
   return (
@@ -70,10 +89,9 @@ export default function ExportReportPage() {
                     onClick={() => setReportType(type.id)}
                     className={`
                       flex items-center gap-3 p-4 rounded-lg border transition-all
-                      ${
-                        reportType === type.id
-                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-lg shadow-green-500/30"
-                          : "bg-card border-border hover:border-green-500 hover:shadow-md"
+                      ${reportType === type.id
+                        ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-lg shadow-green-500/30"
+                        : "bg-card border-border hover:border-green-500 hover:shadow-md"
                       }
                     `}
                   >

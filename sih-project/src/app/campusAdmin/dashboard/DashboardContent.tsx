@@ -44,15 +44,15 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
 
   const activeCount = optimizations.size;
   const totalSteps = 3;
-  const progress = activeCount / totalSteps; 
+  const progress = activeCount / totalSteps;
 
   // Base metrics (Bad state)
   const baseMetrics = {
     ...initialMetrics,
     renewable_percent: Math.max(12.5, initialMetrics.renewable_percent - 50),
     carbon_saved_kg: Math.max(20, initialMetrics.carbon_saved_kg * 0.3),
-    monthly_usage_kwh: initialMetrics.monthly_usage_kwh * 1.2, 
-    energy_cost: initialMetrics.energy_cost * 1.4, 
+    monthly_usage_kwh: initialMetrics.monthly_usage_kwh * 1.2,
+    energy_cost: initialMetrics.energy_cost * 1.4,
     trees_equivalent: Math.max(1, Math.floor(initialMetrics.trees_equivalent * 0.2)),
     km_not_driven: Math.max(50, Math.floor(initialMetrics.km_not_driven * 0.3)),
     coal_avoided_kg: Math.max(10, Math.floor(initialMetrics.coal_avoided_kg * 0.25)),
@@ -73,7 +73,7 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
   };
 
   const renewable = metrics.renewable_percent;
-  
+
   // Theme logic
   let theme = "amber";
   if (activeCount === 3) theme = "emerald";
@@ -85,7 +85,7 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
   const barColor = `bg-${theme}-600 dark:bg-${theme}-500`;
 
   // Currency Conversion: Assuming DB value is USD, convert to INR for display
-  const costInRupees = metrics.energy_cost * 83.5; 
+  const costInRupees = metrics.energy_cost * 83.5;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300">
@@ -189,7 +189,7 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
                 {/* DOLLARS TO RS CONVERSION (Approx 45 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹3,750/month</div>
               </div>
-              <button 
+              <button
                 onClick={() => handleOptimize('battery')}
                 disabled={optimizations.has('battery')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('battery') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
@@ -205,7 +205,7 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
                 {/* DOLLARS TO RS CONVERSION (Approx 32 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹2,670/month</div>
               </div>
-              <button 
+              <button
                 onClick={() => handleOptimize('load')}
                 disabled={optimizations.has('load')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('load') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
@@ -221,7 +221,7 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
                 {/* DOLLARS TO RS CONVERSION (Approx 56 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹4,675/month</div>
               </div>
-              <button 
+              <button
                 onClick={() => handleOptimize('workshop')}
                 disabled={optimizations.has('workshop')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('workshop') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
