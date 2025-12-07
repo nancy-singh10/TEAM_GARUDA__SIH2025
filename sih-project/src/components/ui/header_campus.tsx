@@ -20,6 +20,7 @@ type Notification = {
   message: string;
   created_at: string;
   is_read: boolean;
+  type?: 'info' | 'warning' | 'alert';
 };
 
 export default function HeaderCampus({ user }: { user: CampusUser | null }) {
@@ -110,6 +111,14 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
   const displayEmail = currentUser?.email || 'admin@campus.edu';
   const displayLocation = currentUser?.location || 'Campus Location';
 
+  const getNotificationStyle = (type?: string) => {
+    switch (type) {
+      case 'warning': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400';
+      case 'alert': return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+    }
+  };
+
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -186,14 +195,22 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                         {notifications.map((notif) => (
                           <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <div className="flex gap-3">
-                              <div className="mt-1 p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg h-fit text-blue-600 dark:text-blue-400">
+                              <div className={`mt-1 p-1.5 rounded-lg h-fit ${getNotificationStyle(notif.type)}`}>
                                 <MessageSquare className="w-3 h-3" />
                               </div>
                               <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${notif.type === 'alert' ? 'bg-red-100 text-red-700' :
+                                      notif.type === 'warning' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-blue-100 text-blue-700'
+                                    }`}>
+                                    {notif.type || 'Info'}
+                                  </span>
+                                  <span className="text-xs text-slate-400">
+                                    {new Date(notif.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">{notif.message}</p>
-                                <p className="text-xs text-slate-400 mt-1">
-                                  {new Date(notif.created_at).toLocaleDateString()} • State Admin
-                                </p>
                               </div>
                             </div>
                           </div>
