@@ -76,10 +76,9 @@ export default function CampusAdminHeader({ title }: CampusAdminHeaderProps) {
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                   transition-all duration-200 hover:scale-105
-                  ${
-                    item.active
-                      ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  ${item.active
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }
                 `}
               >
@@ -101,10 +100,9 @@ export default function CampusAdminHeader({ title }: CampusAdminHeaderProps) {
                 className={`
                   flex items-center justify-center h-9 w-9 rounded-lg
                   transition-all duration-200
-                  ${
-                    item.active
-                      ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  ${item.active
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }
                 `}
                 title={item.name}
