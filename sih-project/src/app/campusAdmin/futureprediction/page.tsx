@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sun, Wind, IndianRupee, Calendar as CalendarIcon, Loader2, TrendingUp } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { SimpleCalendar } from "@/components/ui/simple-calendar";
 
@@ -95,9 +96,6 @@ export default function FuturePredictionPage() {
                                             minDate={new Date(minDate)}
                                             maxDate={new Date(maxDate)}
                                             onChange={(date) => {
-                                                // Convert to YYYY-MM-DD for consistency
-                                                // Adjust for timezone offset to avoid previous day bug
-                                                // Use local date parts
                                                 const year = date.getFullYear();
                                                 const month = String(date.getMonth() + 1).padStart(2, '0');
                                                 const day = String(date.getDate()).padStart(2, '0');
@@ -127,88 +125,156 @@ export default function FuturePredictionPage() {
 
             {/* Results Grid */}
             {result && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Solar Card */}
-                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 animate-in slide-in-from-bottom-8 fade-in duration-500 delay-100">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
-                            <Sun className="w-32 h-32 text-orange-500" />
-                        </div>
-                        <CardHeader className="relative z-10">
-                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 flex items-center justify-between">
-                                Solar Potential
-                                <Sun className="h-5 w-5" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                                    {result.solar.toFixed(0)}
-                                </span>
-                                <span className="text-lg font-medium text-slate-500 dark:text-slate-400">kWh</span>
-                            </div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 mt-4 rounded-full overflow-hidden">
-                                <div className="h-full bg-orange-500 w-[70%] rounded-full animate-pulse"></div>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-3 font-medium flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                                High Confidence Forecast
-                            </p>
-                        </CardContent>
-                    </Card>
+                <div className="space-y-8 animate-in slide-in-from-bottom-8 fade-in duration-700">
 
-                    {/* Wind Card */}
-                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 animate-in slide-in-from-bottom-8 fade-in duration-500 delay-200">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-700">
-                            <Wind className="w-32 h-32 text-blue-500" />
-                        </div>
-                        <CardHeader className="relative z-10">
-                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center justify-between">
-                                Wind Potential
-                                <Wind className="h-5 w-5" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                    {result.wind.toFixed(0)}
-                                </span>
-                                <span className="text-lg font-medium text-slate-500 dark:text-slate-400">kWh</span>
-                            </div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 mt-4 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 w-[45%] rounded-full animate-pulse"></div>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-3 font-medium flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                Moderate Confidence
-                            </p>
-                        </CardContent>
-                    </Card>
+                    {/* Hourly Charts */}
+                    {result.hourlyData && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
+                                <CardHeader className="px-0 pt-0">
+                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                        <Sun className="w-5 h-5 text-orange-500" />
+                                        Hourly Solar Radiation Trend
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={result.hourlyData}>
+                                            <defs>
+                                                <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
+                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'W/m²', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#fdba74' }}
+                                            />
+                                            <Area type="monotone" dataKey="Predicted_SRAD" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorSolar)" name="Solar Radiation" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
 
-                    {/* Savings Card */}
-                    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 animate-in slide-in-from-bottom-8 fade-in duration-500 delay-300">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-15 transition-opacity transform group-hover:scale-125 duration-500">
-                            <IndianRupee className="w-32 h-32 text-emerald-500" />
+                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
+                                <CardHeader className="px-0 pt-0">
+                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                        <Wind className="w-5 h-5 text-blue-500" />
+                                        Hourly Wind Speed Trend
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={result.hourlyData}>
+                                            <defs>
+                                                <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
+                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'm/s', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#93c5fd' }}
+                                            />
+                                            <Area type="monotone" dataKey="Predicted_WS" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWind)" name="Wind Speed" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
                         </div>
-                        <CardHeader className="relative z-10">
-                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                                Projected Savings
-                                <IndianRupee className="h-5 w-5" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-500 group-hover:to-emerald-400 transition-all">
-                                    ₹{result.costSaved.toFixed(0)}
-                                </span>
+                    )}
+
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Solar Card */}
+                        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                                <Sun className="w-32 h-32 text-orange-500" />
                             </div>
-                            <div className="mt-4 px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-lg inline-flex items-center gap-2">
-                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">ROI Potential</span>
-                                <span className="text-[10px] bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-400">High</span>
+                            <CardHeader className="relative z-10">
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 flex items-center justify-between">
+                                    Solar Potential
+                                    <Sun className="h-5 w-5" />
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                                        {result.solar.toFixed(0)}
+                                    </span>
+                                    <span className="text-lg font-medium text-slate-500 dark:text-slate-400">kWh</span>
+                                </div>
+                                <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 mt-4 rounded-full overflow-hidden">
+                                    <div className="h-full bg-orange-500 w-[70%] rounded-full animate-pulse"></div>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-3 font-medium flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                    High Confidence Forecast
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        {/* Wind Card */}
+                        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-700">
+                                <Wind className="w-32 h-32 text-blue-500" />
                             </div>
-                        </CardContent>
-                    </Card>
+                            <CardHeader className="relative z-10">
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center justify-between">
+                                    Wind Potential
+                                    <Wind className="h-5 w-5" />
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                        {result.wind.toFixed(0)}
+                                    </span>
+                                    <span className="text-lg font-medium text-slate-500 dark:text-slate-400">kWh</span>
+                                </div>
+                                <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 mt-4 rounded-full overflow-hidden">
+                                    <div className="h-full bg-blue-500 w-[45%] rounded-full animate-pulse"></div>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-3 font-medium flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    Moderate Confidence
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        {/* Savings Card */}
+                        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/20 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-15 transition-opacity transform group-hover:scale-125 duration-500">
+                                <IndianRupee className="w-32 h-32 text-emerald-500" />
+                            </div>
+                            <CardHeader className="relative z-10">
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                                    Projected Savings
+                                    <IndianRupee className="h-5 w-5" />
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="relative z-10">
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-500 group-hover:to-emerald-400 transition-all">
+                                        ₹{result.costSaved.toFixed(0)}
+                                    </span>
+                                </div>
+                                <div className="mt-4 px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-lg inline-flex items-center gap-2">
+                                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">ROI Potential</span>
+                                    <span className="text-[10px] bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-400">High</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             )}
         </div>
     );
 }
+

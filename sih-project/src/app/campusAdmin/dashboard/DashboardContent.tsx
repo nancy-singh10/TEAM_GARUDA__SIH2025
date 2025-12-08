@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import TopMetricsRow from './TopMetricsRow';
 import AreaChart24h from './AreaChart24h';
 import ForecastDonut from './ForecastDonut';
@@ -31,6 +32,30 @@ type DashboardContentProps = {
     solar: number;
     wind: number;
   };
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 10
+    }
+  }
 };
 
 export default function DashboardContent({ initialMetrics, chartData, forecastData }: DashboardContentProps) {
@@ -90,14 +115,21 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
   const costInRupees = metrics.energy_cost * 83.5;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300">
+    <motion.main
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300"
+    >
       <div className="max-w-6xl mx-auto">
-        <TopMetricsRow
-          solar_kw={metrics.solar_kw}
-          wind_kw={metrics.wind_kw}
-          battery_percent={metrics.battery_percent}
-          grid_kw={metrics.grid_kw}
-        />
+        <motion.div variants={itemVariants}>
+          <TopMetricsRow
+            solar_kw={metrics.solar_kw}
+            wind_kw={metrics.wind_kw}
+            battery_percent={metrics.battery_percent}
+            grid_kw={metrics.grid_kw}
+          />
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Renewable Usage Card */}
@@ -187,13 +219,16 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="md:col-span-2">
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
               <div>
                 <EnergyMix renewablePercent={metrics.renewable_percent} rank={activeCount === 3 ? 6 : 18} rankTotal={25} />
               </div>
               <div>
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 h-full border border-slate-100 dark:border-slate-700">
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 h-full border border-slate-100 dark:border-slate-700"
+                >
                   <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white">Sustainability Impact</h3>
                   <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">Your contribution to campus sustainability</div>
                   <div className="space-y-3">
@@ -212,73 +247,97 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
                       <div className="font-semibold text-amber-700 dark:text-amber-400">{metrics.coal_avoided_kg} kg</div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
-            </div>
-            <div className="mt-6">
+            </motion.div>
+            <motion.div variants={itemVariants}>
               <AreaChart24h data={chartData} />
-            </div>
+            </motion.div>
           </div>
 
-          <div>
+          <motion.div variants={itemVariants}>
             <ForecastDonut grid={forecastData.grid} solar={forecastData.solar} wind={forecastData.wind} />
-          </div>
+          </motion.div>
         </div>
 
         {/* Smart Recommendations */}
-        <div className="mb-10">
+        <motion.div variants={itemVariants} className="mb-10">
           <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Smart Recommendations</h3>
           <div className="space-y-4">
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('battery') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('battery') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Battery optimization <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded ml-2">High Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Battery at optimal level. Consider partial discharge during peak hours.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 45 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹3,750/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('battery')}
                 disabled={optimizations.has('battery')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('battery') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('battery') ? 'Active' : 'Optimize Schedule'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('load') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('load') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Load balancing opportunity <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Consider shifting non-critical loads to match generation patterns.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 32 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹2,670/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('load')}
                 disabled={optimizations.has('load')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('load') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('load') ? 'Active' : 'Shift Loads'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('workshop') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('workshop') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Shift workshop loads to 2–4 PM <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Solar generation peaks during these hours. Move energy-intensive operations here.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 56 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹4,675/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('workshop')}
                 disabled={optimizations.has('workshop')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('workshop') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('workshop') ? 'Active' : 'Schedule Loads'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </main>
+    </motion.main>
   );
 }

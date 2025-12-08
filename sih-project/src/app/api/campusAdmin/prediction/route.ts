@@ -1,6 +1,5 @@
 
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseServer';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -13,64 +12,77 @@ export async function GET(request: Request) {
     try {
         const targetDate = new Date(targetDateStr);
         const day = targetDate.getDate();
-        const month = targetDate.getMonth() + 1; // JS months are 0-indexed, SQL is 1-indexed
+        const month = targetDate.getMonth() + 1;
+        const year = targetDate.getFullYear();
 
-        // Query distinct years for the same Day/Month
-        // Note: Supabase/PostgREST doesn't support advanced "EXTRACT" syntax easily via JS client in one go without RPC.
-        // However, we can try to fetch all matching M/D rows if the dataset isn't huge, or use a raw query if we had one.
-        // Alternative: Generating the specific 3 previous dates to look for.
+        // Call the Python ML API
+        const mlApiResponse = await fetch('http://localhost:8000/predict/day', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                year: year,
+                month: month,
+                day: day
+            }),
+        });
 
-        // Strategy: Calculate the exact 3 dates for the past 3 years
-        const datesToFetch: string[] = [];
-        for (let i = 1; i <= 3; i++) {
-            const d = new Date(targetDate);
-            d.setFullYear(d.getFullYear() - i);
-            // Handle leap years edge case if needed, but simplified for now:
-            datesToFetch.push(d.toISOString().split('T')[0]); // YYYY-MM-DD
+        if (!mlApiResponse.ok) {
+            const errorDetails = await mlApiResponse.text();
+            throw new Error(`ML API Failed: ${mlApiResponse.status} ${errorDetails}`);
         }
 
-        const { data, error } = await supabaseAdmin
-            .from('energy_data_3yrs')
-            .select('solar_units, wind_units, date')
-            .in('date', datesToFetch);
+        const hourlyPredictions = await mlApiResponse.json();
 
-        if (error) {
-            console.error('Prediction DB Error:', error);
-            // Fallback for hackathon demo if table doesn't exist yet:
-            // return randomized "realistic" data to prevent UI crash
-            const mockSolar = 450 + Math.random() * 100;
-            const mockWind = 200 + Math.random() * 100;
-            return NextResponse.json({
-                exists: false,
-                solar: mockSolar,
-                wind: mockWind,
-                costSaved: (mockSolar + mockWind) * 10,
-                datesUsed: datesToFetch
-            });
+        // console.log(hourlyPredictions);
+
+        // Aggregate hourly predictions to get daily totals
+        let totalSolar = 0;
+        let totalWind = 0;
+
+        // Arbitrary factors to convert raw ML outputs (SRAD, WS) to likely Energy units (kWh) for the campus
+        // These factors can be tuned to match realistic campus consumption/generation scales
+        const SOLAR_FACTOR = 0.1; // Example conversion
+        const WIND_FACTOR = 2.0; // Example conversion (Wind power relates to cube of speed usually, but linear approx for now or simple sum)
+
+        interface HourlyPrediction {
+            Predicted_SRAD: number;
+            Predicted_WS: number;
+            Predicted_TM: number;
+            Predicted_HU: number;
+            Hour: number;
         }
 
-        if (!data || data.length === 0) {
-            // No data found for past years
-            return NextResponse.json({ error: 'No historical data found for this date' }, { status: 404 });
-        }
+        (hourlyPredictions as HourlyPrediction[]).forEach(p => {
+            // Simple accumulation logic
+            // SRAD is usually W/m^2. Assuming some panel area.
+            // If SRAD is negative (shouldn't be), clip to 0
+            const solarVal = Math.max(0, p.Predicted_SRAD);
+            totalSolar += solarVal * SOLAR_FACTOR;
 
-        // Calculate Averages
-        const totalSolar = data.reduce((acc, curr) => acc + (curr.solar_units || 0), 0);
-        const totalWind = data.reduce((acc, curr) => acc + (curr.wind_units || 0), 0);
-        const count = data.length;
+            // Wind Speed (m/s). Power ~ v^3 usually. 
+            // Simplified: if wind > cut-in speed (e.g. 2), add generation
+            const ws = p.Predicted_WS;
+            if (ws > 0) {
+                totalWind += (ws * WIND_FACTOR);
+                // Or a rough cubic: totalWind += (Math.pow(ws, 3) * 0.05);
+            }
+        });
 
-        const avgSolar = totalSolar / count;
-        const avgWind = totalWind / count;
-        const costSaved = (avgSolar + avgWind) * 10;
+        const costSaved = (totalSolar + totalWind) * 8; // Assuming 8 Rs/kWh
 
         return NextResponse.json({
-            solar: avgSolar,
-            wind: avgWind,
+            solar: totalSolar,
+            wind: totalWind,
             costSaved: costSaved,
-            historicalCount: count
+            source: 'ML_RandomForest',
+            hourlyData: hourlyPredictions // Passing this through in case we want to chart it later
         });
 
     } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        console.error("Prediction Route Error:", e);
+        return NextResponse.json({ error: e.message || "Internal Server Error" }, { status: 500 });
     }
 }
+
