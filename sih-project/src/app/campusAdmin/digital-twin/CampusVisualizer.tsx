@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, FlaskConical, Home, GraduationCap, Plus, Trash2, X, Crown, Edit, Save, Maximize2, Minimize2 } from "lucide-react";
+import { Building2, FlaskConical, Home, GraduationCap, Plus, Trash2, X, Crown, Edit, Save, Maximize2, Minimize2, Box } from "lucide-react";
 import { BuildingData, BuildingType, BUILDING_TEMPLATES } from "./types";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ const BuildingIcon = ({ type, className }: { type: BuildingType; className?: str
     case "LAB": return <FlaskConical className={className} />;
     case "CLASSROOM": return <GraduationCap className={className} />;
     case "ADMIN": return <Building2 className={className} />;
+    case "CUSTOM": return <Box className={className} />;
   }
 };
 
@@ -263,7 +264,9 @@ export default function CampusVisualizer({ buildings, setBuildings, totalAvailab
             <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 group-hover:border-blue-500 group-hover:bg-gray-700 flex items-center justify-center transition-all shadow-lg">
               <BuildingIcon type={type as BuildingType} className="w-5 h-5 text-gray-400 group-hover:text-blue-400 transition-colors" />
             </div>
-            <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-wide transition-colors">{type.toLowerCase()}</span>
+            <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-wide transition-colors">
+              {type === "CUSTOM" ? "Custom" : type}
+            </span>
           </button>
         ))}
       </div>

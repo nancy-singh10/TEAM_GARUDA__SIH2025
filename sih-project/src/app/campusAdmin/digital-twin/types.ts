@@ -1,4 +1,4 @@
-export type BuildingType = "HOSTEL" | "LAB" | "CLASSROOM" | "ADMIN";
+export type BuildingType = "HOSTEL" | "LAB" | "CLASSROOM" | "ADMIN" | "CUSTOM";
 
 export interface BuildingData {
   id: string;
@@ -18,4 +18,5 @@ export const BUILDING_TEMPLATES: Record<BuildingType, Omit<BuildingData, "id" | 
   LAB: { name: "Chemistry Lab", baseLoad: 300, priority: "LOW" },
   CLASSROOM: { name: "Lecture Hall", baseLoad: 50, priority: "LOW" },
   ADMIN: { name: "Admin Block", baseLoad: 100, priority: "HIGH" },
+  CUSTOM: { name: "Custom Building", baseLoad: 100, priority: "LOW" },
 };
