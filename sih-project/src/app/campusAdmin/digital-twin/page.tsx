@@ -24,8 +24,8 @@ const useDashboardLogic = () => {
   });
 
   // Simulation States
-  const [solar, setSolar] = useState(250);
-  const [wind, setWind] = useState(100);
+  const [solar, setSolar] = useState(0);
+  const [wind, setWind] = useState(0);
   const [battery, setBattery] = useState(50);
   const [weatherMode, setWeatherMode] = useState("Custom");
   const [isAutoPilot, setIsAutoPilot] = useState(false);
@@ -55,31 +55,41 @@ const useDashboardLogic = () => {
         const user = JSON.parse(storedSession);
         if (user?.id) {
           setCampusId(user.id);
-          fetchCampusData(user.id); // Fetch Capacities
+          // fetchCampusData called separately below (uses cookie)
           fetchBuildings(user.id);  // Fetch Buildings
         }
       } catch (e) { console.error("Session error", e); }
     }
+
+    // Always fetch capacity (uses cookie)
+    fetchCampusData();
+    // fetchBuildings still depends on ID for now, or we can update it too. 
+    // For now, buildings rely on localStorage ID which is acceptable if we assume matching cookie.
+
   }, []);
 
   // --- API CALLS ---
-  const fetchCampusData = async (id: number) => {
+  const fetchCampusData = async () => {
     try {
-      // UPDATED: Using POST to match your existing backend
+      // UPDATED: Using POST (cookie-based auth)
       const res = await fetch(`/api/campus-admin/capacity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campus_id: id })
+        body: JSON.stringify({}) // No body needed
       });
 
       if (res.ok) {
         const data = await res.json();
-        setCapacities({
+        const newCaps = {
           solar: Number(data.solar_capacity) || 500,
           wind: Number(data.wind_capacity) || 500,
           battery: Number(data.battery_capacity) || 2000,
           loadMax: Number(data.campus_load_max) || 1000
-        });
+        };
+        setCapacities(newCaps);
+        // Initialize values within range (User requested 50% for solar)
+        setSolar(newCaps.solar * 0.5);
+        setWind(newCaps.wind * 0.2); // Safe default for wind
       }
     } catch (e) { console.error("Capacity fetch error", e); }
   };
