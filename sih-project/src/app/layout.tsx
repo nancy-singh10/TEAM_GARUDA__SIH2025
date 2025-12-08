@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EnergyFlow - Smart Campus Energy",
+  title: "GARUDA - Smart Campus Energy",
   description: "AI-powered energy management for modern campuses",
 };
 
@@ -30,15 +30,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
       >
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <div className="flex flex-col min-h-screen">
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="flex flex-col min-h-screen">
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
         </ThemeProvider>
       </body>
     </html>

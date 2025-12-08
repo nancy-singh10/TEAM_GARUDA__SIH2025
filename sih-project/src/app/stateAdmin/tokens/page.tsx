@@ -164,7 +164,7 @@ export default function TokenManagementPage() {
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${tx.type === 'MINT_REWARD' ? 'bg-green-100 text-green-700' :
-                                                    tx.type === 'BURN_PURCHASE' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                                                tx.type === 'BURN_PURCHASE' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
                                                 }`}>
                                                 {tx.type.replace('_', ' ').toLowerCase()}
                                             </span>
