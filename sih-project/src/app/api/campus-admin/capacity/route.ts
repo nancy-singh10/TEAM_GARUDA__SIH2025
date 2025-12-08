@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://zgkvdcotjingnpehauew.supabase.co";
@@ -7,8 +8,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { campus_id } = body;
+    // Securely get campus_id from HttpOnly cookie
+    const cookieStore = await cookies();
+    const campus_id = cookieStore.get('campus_admin_id')?.value;
+
+    if (!campus_id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Fetch the capacities you saved during Sign Up
     const { data, error } = await supabase
