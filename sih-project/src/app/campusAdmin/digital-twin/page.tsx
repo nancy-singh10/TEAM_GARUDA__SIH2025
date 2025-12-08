@@ -1272,10 +1272,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Zap, Clock, Play, Pause, Sun, Moon, BatteryCharging, Leaf, RotateCcw, IndianRupee } from "lucide-react";
+import { Zap, Clock, Play, Pause, Sun, Moon, BatteryCharging, Leaf, RotateCcw, IndianRupee, TrendingUp, BarChart3, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CampusVisualizer from "./CampusVisualizer";
 import { BuildingData, BUILDING_TEMPLATES } from "./types";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- TYPES FOR LOGS ---
 interface HourlyLog {
@@ -1285,6 +1287,7 @@ interface HourlyLog {
   batteryDischarge: number;
   gridUsed: number;
   costSaved: number;
+  totalLoad: number;
 }
 
 // --- LOGIC HOOK ---
@@ -1307,7 +1310,7 @@ const useDashboardLogic = () => {
   const [hourlyLogs, setHourlyLogs] = useState<HourlyLog[]>([]);
   const [totalCostSaved, setTotalCostSaved] = useState(0);
 
-  // Buildings - Init with total load ~550
+  // Buildings
   const [buildings, setBuildings] = useState<BuildingData[]>([
     { id: "1", type: "HOSTEL", x: 100, y: 100, ...BUILDING_TEMPLATES.HOSTEL, renewableRatio: 0 },
     { id: "2", type: "LAB", x: 300, y: 150, ...BUILDING_TEMPLATES.LAB, renewableRatio: 0 },
@@ -1329,7 +1332,6 @@ const useDashboardLogic = () => {
 
   // --- SIMULATION STEP ---
   const handleAdvanceTime = () => {
-    // 0. CHECK FOR NEW DAY RESET
     let currentLogs = [...hourlyLogs];
     let currentBaseTime = new Date(time);
     let currentTotalSaved = totalCostSaved;
@@ -1343,13 +1345,11 @@ const useDashboardLogic = () => {
       setTotalCostSaved(0);
     }
 
-    // 1. Advance Time
     const updatedTime = new Date(currentBaseTime);
     updatedTime.setHours(updatedTime.getHours() + 1);
     const hourVal = updatedTime.getHours();
     const hourStr = updatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // 2. Generate Renewables
     let newSolar = 0;
     if (hourVal >= 6 && hourVal < 18) {
       const distFromNoon = Math.abs(12 - hourVal);
@@ -1358,7 +1358,6 @@ const useDashboardLogic = () => {
     }
     let newWind = Math.max(0, Math.min(capacities.wind, wind + (Math.random() - 0.5) * 80));
 
-    // 3. Energy Logic
     const generation = newSolar + newWind;
     const surplus = generation - totalLoad;
 
@@ -1367,38 +1366,34 @@ const useDashboardLogic = () => {
     let batteryOutput = 0;
 
     if (surplus > 0) {
-      // CHARGE
       status = "CHARGING";
       const chargeAmount = Math.min(surplus, capacities.maxChargeRate);
       const percentAdded = (chargeAmount / capacities.batteryKwh) * 100;
       newBatteryPercent = Math.min(100, batteryPercent + percentAdded);
     } else if (surplus < 0) {
-      // DISCHARGE
       const deficit = Math.abs(surplus);
       if (batteryPercent > 2) {
         status = "DISCHARGING";
         const dischargeNeeded = Math.min(deficit, capacities.maxDischargeRate);
-        batteryOutput = dischargeNeeded; // Actual kW out
+        batteryOutput = dischargeNeeded;
         const percentDrained = (dischargeNeeded / capacities.batteryKwh) * 100;
         newBatteryPercent = Math.max(0, batteryPercent - percentDrained);
       }
     }
 
-    // 4. Calculate Grid Usage & Cost
     const energyProvidedBySystem = newSolar + newWind + batteryOutput;
     const gridUsed = Math.max(0, totalLoad - energyProvidedBySystem);
 
-    // UPDATED FORMULA: (Renewable - Grid) * 2
     const costStep = ((newSolar + newWind + batteryOutput) - gridUsed) * 2;
 
-    // 5. Update Logs
     const newLog: HourlyLog = {
       hour: hourStr,
       solar: Math.round(newSolar),
       wind: Math.round(newWind),
       batteryDischarge: Math.round(batteryOutput),
       gridUsed: Math.round(gridUsed),
-      costSaved: Math.round(costStep)
+      costSaved: Math.round(costStep),
+      totalLoad: totalLoad
     };
 
     const updatedLogs = [...currentLogs, newLog];
@@ -1406,29 +1401,25 @@ const useDashboardLogic = () => {
     setHourlyLogs(updatedLogs);
     setTotalCostSaved(currentTotalSaved + Math.round(costStep));
 
-    // 6. Update State
     setSolar(newSolar);
     setWind(newWind);
     setBatteryPercent(newBatteryPercent);
     setBatteryStatus(status);
     setTime(updatedTime);
 
-    // 7. Auto-Stop Trigger
     if (updatedLogs.length >= 24) {
       setIsAutoPilot(false);
     }
   };
 
-  // Reset Function for Manual Restart
   const resetDay = () => {
     setHourlyLogs([]);
     setTotalCostSaved(0);
     const d = new Date(); d.setHours(0, 0, 0, 0);
     setTime(d);
-    setIsAutoPilot(true); // Restart AutoPilot immediately
+    setIsAutoPilot(true);
   };
 
-  // Toggle Handler
   const toggleAutoPilot = () => {
     if (!isAutoPilot && hourlyLogs.length >= 24) {
       resetDay();
@@ -1437,7 +1428,6 @@ const useDashboardLogic = () => {
     }
   };
 
-  // Auto Loop - 2 SECONDS PER HOUR
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoPilot && hourlyLogs.length < 24) {
@@ -1446,7 +1436,6 @@ const useDashboardLogic = () => {
     return () => clearInterval(interval);
   }, [isAutoPilot, hourlyLogs]);
 
-  // Visual Mix Logic
   let dischargeKw = batteryStatus === "DISCHARGING" ? Math.min(capacities.maxDischargeRate, Math.max(0, totalLoad - (solar + wind))) : 0;
 
   const usedSolar = Math.min(solar, totalLoad);
@@ -1590,7 +1579,7 @@ const CurrentStateSection = ({ data }: any) => {
         <div className="grid grid-cols-2 gap-3">
           <button onClick={toggleAutoPilot} className={cn("flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all", isAutoPilot ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-white text-slate-600 border border-slate-200 shadow-sm")}>
             {isAutoPilot ? <Pause size={16} /> : <Play size={16} />}
-            {isAutoPilot ? "Pause" : hourlyLogs.length >= 24 ? "Restart" : "HourWise Prediction"}
+            {isAutoPilot ? "Pause" : hourlyLogs.length >= 24 ? "Restart" : "Auto-Pilot"}
           </button>
 
           <button onClick={handleAdvanceTime} disabled={isAutoPilot} className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -1633,6 +1622,16 @@ const CurrentStateSection = ({ data }: any) => {
 export default function DashboardPage() {
   const logic = useDashboardLogic();
   const [fullScreen, setFullScreen] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
+  // Prepare Data for Graphs
+  const graphData = logic.hourlyLogs.map(log => ({
+    name: log.hour,
+    solar: log.solar,
+    wind: log.wind,
+    totalRenewable: log.solar + log.wind,
+    load: log.totalLoad
+  }));
 
   if (!logic.mounted) return null;
 
@@ -1643,7 +1642,17 @@ export default function DashboardPage() {
           <CurrentStateSection data={logic} />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={70}>
+        <ResizablePanel defaultSize={70} className="relative">
+
+          {/* --- ANALYTICS BUTTON --- */}
+          <button
+            onClick={() => setShowAnalytics(true)}
+            className="absolute top-4 right-16 z-50 p-2 bg-white/90 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg shadow-md border border-slate-200 transition-all"
+            title="View Analytics"
+          >
+            <BarChart3 size={18} />
+          </button>
+
           <CampusVisualizer
             buildings={logic.buildings}
             setBuildings={logic.setBuildings}
@@ -1653,6 +1662,95 @@ export default function DashboardPage() {
             isFullScreen={fullScreen}
             onToggleFullScreen={() => setFullScreen(!fullScreen)}
           />
+
+          {/* --- ANALYTICS MODAL --- */}
+          <AnimatePresence>
+            {showAnalytics && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[100] bg-white/60 backdrop-blur-md flex items-center justify-center p-8"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 20 }}
+                  className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full h-full max-w-5xl max-h-[600px] flex flex-col overflow-hidden"
+                >
+                  {/* Modal Header */}
+                  <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><BarChart3 size={20} /></div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-800">Session Analytics</h2>
+                        <p className="text-xs text-slate-500">Real-time performance metrics</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowAnalytics(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                  </div>
+
+                  {/* Modal Content - Graphs */}
+                  <div className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+
+                    {/* Graph 1 */}
+                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col">
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp size={16} className="text-blue-500" />
+                        <h4 className="text-sm font-bold text-slate-600 uppercase">Renewable Mix</h4>
+                      </div>
+                      <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={graphData}>
+                            <defs>
+                              <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#EAB308" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#EAB308" stopOpacity={0} />
+                              </linearGradient>
+                              <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                            <Legend />
+                            <Area type="monotone" dataKey="solar" name="Solar" stroke="#EAB308" fillOpacity={1} fill="url(#colorSolar)" strokeWidth={2} />
+                            <Area type="monotone" dataKey="wind" name="Wind" stroke="#3B82F6" fillOpacity={1} fill="url(#colorWind)" strokeWidth={2} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Graph 2 */}
+                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Zap size={16} className="text-green-500" />
+                        <h4 className="text-sm font-bold text-slate-600 uppercase">Supply vs Demand</h4>
+                      </div>
+                      <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={graphData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="totalRenewable" name="Generation (kW)" stroke="#10B981" strokeWidth={3} dot={false} />
+                            <Line type="step" dataKey="load" name="Total Load (kW)" stroke="#EF4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
