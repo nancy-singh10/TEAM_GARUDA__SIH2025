@@ -130,8 +130,8 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
               <Zap className="w-5 h-5 text-white fill-current" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-emerald-900 dark:text-white leading-none">
-                Energy<span className="text-emerald-500">Dashboard</span>
+              <h1 className="text-xl font-bold text-emerald-900 dark:text-white leading-none tracking-tight">
+                GARUDA
               </h1>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">Campus Energy Management</p>
             </div>
