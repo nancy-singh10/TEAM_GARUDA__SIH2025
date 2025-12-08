@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Trophy, Radio, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun } from 'lucide-react';
+import { Zap, LayoutDashboard, Trophy, Radio, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Coins } from 'lucide-react';
 
 type StateUser = {
   admin_name: string;
@@ -108,15 +108,27 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/stateAdmin/dashboard" className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-blue-200">
-              <LayoutDashboard className="w-4 h-4" /> Dashboard
-            </Link>
-            <Link href="/stateAdmin/campusRanking" className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">
-              <Trophy className="w-4 h-4" /> Campus Ranking
-            </Link>
-            <Link href="/stateAdmin/broadcast" className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">
-              <Radio className="w-4 h-4" /> Broadcast
-            </Link>
+            {[
+              { name: 'Dashboard', href: '/stateAdmin/dashboard', icon: LayoutDashboard },
+              { name: 'Ranking', href: '/stateAdmin/campusRanking', icon: Trophy },
+              { name: 'Broadcast', href: '/stateAdmin/broadcast', icon: Radio },
+              { name: 'Tokens', href: '/stateAdmin/tokens', icon: Coins },
+            ].map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+                    ? 'bg-blue-500 text-white shadow-sm shadow-blue-200'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                >
+                  <link.icon className="w-4 h-4" />
+                  {link.name}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right Section: Theme Toggle & Profile */}
