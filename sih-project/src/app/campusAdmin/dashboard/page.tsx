@@ -13,7 +13,7 @@ export type CampusUser = {
   email: string;
   campus_name: string;
   location: string;
-  
+
   // Energy Configuration Fields (Numeric)
   campus_load_min: number;
   campus_load_max: number;
@@ -43,11 +43,11 @@ async function fetchUserProfile() {
   try {
     const cookieStore = await cookies();
     const campusCookie = cookieStore.get('campus_admin_id');
-    
+
     // If no cookie, return null (User is not authenticated)
     if (!campusCookie) {
       console.log("No auth cookie found. Please log in.");
-      return null; 
+      return null;
     }
 
     const adminId = campusCookie.value;
@@ -63,7 +63,7 @@ async function fetchUserProfile() {
       console.error('Error fetching user profile:', error.message);
       return null;
     }
-    
+
     return user as CampusUser;
   } catch (err) {
     console.error('Profile fetch failed:', err);
@@ -96,14 +96,14 @@ async function fetchMetrics(): Promise<Metrics> {
     const monthly_usage_kwh = Number(analysisData?.consumption ?? 850);
     const energy_cost = Number(analysisData?.cost ?? 127.5);
     const trees_equivalent = Number(comparisonData?.trees_saved ?? 6);
-    
+
     // --- Unit Conversions ---
     // Coal: Convert Lbs (Database) -> Kg (Display) | 1 lb = 0.453592 kg
     const coal_lbs = Number(comparisonData?.coal_avoided_lbs ?? 56.4);
-    const coal_avoided_kg = coal_lbs * 0.453592; 
+    const coal_avoided_kg = coal_lbs * 0.453592;
 
     // Drive: Convert Miles (Default) -> Km (Display) | 1 mi = 1.60934 km
-    const miles_driven = 300; 
+    const miles_driven = 300;
     const km_not_driven = miles_driven * 1.60934;
 
     const solar_kw = Number(analysisData?.energy_solar ?? 47.4);
@@ -117,7 +117,7 @@ async function fetchMetrics(): Promise<Metrics> {
       monthly_usage_kwh: isNaN(monthly_usage_kwh) ? 850 : monthly_usage_kwh,
       energy_cost: isNaN(energy_cost) ? 127.5 : energy_cost,
       trees_equivalent: isNaN(trees_equivalent) ? 6 : trees_equivalent,
-      km_not_driven, 
+      km_not_driven,
       coal_avoided_kg,
       solar_kw,
       wind_kw,
@@ -153,7 +153,7 @@ export default async function CampusAdminDashboard() {
   const peakSolar = Number(m.solar_kw ?? 47.4);
   const peakWind = Number(m.wind_kw ?? 34.1);
   const batteryStart = Number(m.battery_percent ?? 75);
-  
+
   const data = generateEnergyData(
     0, peakSolar, peakWind * 0.2, peakWind, batteryStart
   );
@@ -164,9 +164,9 @@ export default async function CampusAdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      
+
       {/* Content Component with User Profile Data Passed Down */}
-      <DashboardContent 
+      <DashboardContent
         initialMetrics={m}
         chartData={data}
         forecastData={{
@@ -174,7 +174,7 @@ export default async function CampusAdminDashboard() {
           solar: forecastSolar,
           wind: forecastWind
         }}
-        user={user} 
+        user={user}
       />
     </div>
   );

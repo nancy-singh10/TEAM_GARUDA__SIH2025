@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import TopMetricsRow from './TopMetricsRow';
 import AreaChart24h from './AreaChart24h';
 import ForecastDonut from './ForecastDonut';
 import EnergyMix from './EnergyMix';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 // Updated type to match page.tsx
 type Metrics = {
@@ -29,6 +32,30 @@ type DashboardContentProps = {
     solar: number;
     wind: number;
   };
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 10
+    }
+  }
 };
 
 export default function DashboardContent({ initialMetrics, chartData, forecastData }: DashboardContentProps) {
@@ -88,65 +115,120 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
   const costInRupees = metrics.energy_cost * 83.5;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300">
+    <motion.main
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 py-10 px-6 transition-colors duration-300"
+    >
       <div className="max-w-6xl mx-auto">
-        <TopMetricsRow
-          solar_kw={metrics.solar_kw}
-          wind_kw={metrics.wind_kw}
-          battery_percent={metrics.battery_percent}
-          grid_kw={metrics.grid_kw}
-        />
+        <motion.div variants={itemVariants}>
+          <TopMetricsRow
+            solar_kw={metrics.solar_kw}
+            wind_kw={metrics.wind_kw}
+            battery_percent={metrics.battery_percent}
+            grid_kw={metrics.grid_kw}
+          />
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Renewable Usage Card */}
-          <div className={`rounded-xl p-5 shadow border transition-all duration-500 ${statusBg} ${statusBorder}`}>
-            <div className={`text-sm font-medium ${statusText}`}>Renewable Usage</div>
-            <div className={`text-2xl font-bold mt-2 text-${theme}-800 dark:text-${theme}-300`}>
-              {/* TRUNCATED TO 2 DECIMALS */}
-              {renewable.toFixed(2)}%
+          <Link href="/campusAdmin/renewable-usage" className="block h-full">
+            <div className={`h-full bg-white dark:bg-slate-800 rounded-xl p-5 shadow border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer ${statusBg} ${statusBorder} relative group overflow-hidden flex flex-col justify-between`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/0 to-orange-600/0 group-hover:from-amber-400/5 group-hover:to-orange-600/5 transition-all duration-300" />
+              <div>
+                <div className={`text-sm font-medium ${statusText} flex justify-between items-center mb-2`}>
+                  Renewable Usage
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 -ml-4 group-hover:translate-x-1 group-hover:ml-0" />
+                </div>
+                <div className={`text-2xl font-bold text-${theme}-800 dark:text-${theme}-300`}>
+                  {renewable.toFixed(2)}%
+                </div>
+              </div>
+              <div>
+                <div className="h-2 bg-white/60 dark:bg-slate-800/60 rounded-full mt-3 overflow-hidden">
+                  <div style={{ width: `${Math.min(100, renewable)}%` }} className={`h-2 transition-all duration-1000 ${barColor}`} />
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                  {activeCount === 3 ? "Above campus average" : "Below target efficiency"}
+                </div>
+              </div>
             </div>
-            <div className="h-2 bg-white/60 dark:bg-slate-800/60 rounded-full mt-3 overflow-hidden">
-              <div style={{ width: `${Math.min(100, renewable)}%` }} className={`h-2 transition-all duration-1000 ${barColor}`} />
-            </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-              {activeCount === 3 ? "Above campus average" : "Below target efficiency"}
-            </div>
-          </div>
+          </Link>
 
-          <div className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-5 shadow border border-sky-100 dark:border-sky-800">
-            <div className="text-sm text-sky-700 dark:text-sky-400 font-medium">Carbon Saved</div>
-            <div className="text-2xl font-bold text-sky-800 dark:text-sky-300 mt-2">
-              {metrics.carbon_saved_kg.toFixed(2)} kg
+          {/* Carbon Saved Card */}
+          <Link href="/campusAdmin/carbon-saved" className="block h-full">
+            <div className="h-full bg-sky-50 dark:bg-sky-900/20 rounded-xl p-5 shadow border border-sky-100 dark:border-sky-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute inset-0 bg-gradient-to-br from-sky-400/0 to-blue-600/0 group-hover:from-sky-400/5 group-hover:to-blue-600/5 transition-all duration-300" />
+              <div>
+                <div className="text-sm text-sky-700 dark:text-sky-400 font-medium flex justify-between items-center mb-2">
+                  Carbon Saved
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 -ml-4 group-hover:translate-x-1 group-hover:ml-0" />
+                </div>
+                <div className="text-2xl font-bold text-sky-800 dark:text-sky-300">
+                  {metrics.carbon_saved_kg.toFixed(2)} kg
+                </div>
+              </div>
+              <div>
+                {/* Visual spacer to match the progress bar height of the first card if needed, or just padding */}
+                <div className="h-2 mt-3 w-full" />
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">This month</div>
+              </div>
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">This month</div>
-          </div>
+          </Link>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-5 shadow border border-amber-100 dark:border-amber-800">
-            <div className="text-sm text-amber-700 dark:text-amber-400 font-medium">Monthly Usage</div>
-            <div className="text-2xl font-bold text-amber-800 dark:text-amber-300 mt-2">
-              {metrics.monthly_usage_kwh.toFixed(0)} kWh
+          {/* Sustainability Impact Card */}
+          <Link href="/campusAdmin/sustainability" className="block h-full">
+            <div className={`h-full bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-5 shadow border border-emerald-100 dark:border-emerald-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group relative overflow-hidden flex flex-col justify-between`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/0 to-teal-600/0 group-hover:from-emerald-400/5 group-hover:to-teal-600/5 transition-all duration-300" />
+              <div>
+                <div className="text-sm text-emerald-700 dark:text-emerald-400 font-medium flex justify-between items-center mb-2">
+                  Sustainability Impact
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 -ml-4 group-hover:translate-x-1 group-hover:ml-0" />
+                </div>
+                <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">
+                  {metrics.trees_equivalent} Trees
+                </div>
+              </div>
+              <div>
+                <div className="h-2 mt-3 w-full" />
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">Offset equivalent</div>
+              </div>
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">{activeCount === 3 ? "-12% vs last month" : "+5% vs last month"}</div>
-          </div>
+          </Link>
 
-          <div className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-5 shadow border border-violet-100 dark:border-violet-800">
-            <div className="text-sm text-violet-700 dark:text-violet-400 font-medium">Energy Cost</div>
-            <div className="text-2xl font-bold text-violet-800 dark:text-violet-300 mt-2">
-              {/* CONVERTED TO RS AND TRUNCATED */}
-              ₹{costInRupees.toFixed(2)}
+          {/* Energy Cost Card */}
+          <Link href="/campusAdmin/energy-cost" className="block h-full">
+            <div className="h-full bg-violet-50 dark:bg-violet-900/20 rounded-xl p-5 shadow border border-violet-100 dark:border-violet-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-400/0 to-purple-600/0 group-hover:from-violet-400/5 group-hover:to-purple-600/5 transition-all duration-300" />
+              <div>
+                <div className="text-sm text-violet-700 dark:text-violet-400 font-medium flex justify-between items-center mb-2">
+                  Energy Cost
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 -ml-4 group-hover:translate-x-1 group-hover:ml-0" />
+                </div>
+                <div className="text-2xl font-bold text-violet-800 dark:text-violet-300">
+                  ₹{costInRupees.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="h-2 mt-3 w-full" />
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">Savings from renewables</div>
+              </div>
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">Savings from renewables</div>
-          </div>
+          </Link>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="md:col-span-2">
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
               <div>
                 <EnergyMix renewablePercent={metrics.renewable_percent} rank={activeCount === 3 ? 6 : 18} rankTotal={25} />
               </div>
               <div>
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 h-full border border-slate-100 dark:border-slate-700">
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className="bg-white dark:bg-slate-800 rounded-xl shadow p-6 h-full border border-slate-100 dark:border-slate-700"
+                >
                   <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white">Sustainability Impact</h3>
                   <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">Your contribution to campus sustainability</div>
                   <div className="space-y-3">
@@ -165,73 +247,97 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
                       <div className="font-semibold text-amber-700 dark:text-amber-400">{metrics.coal_avoided_kg} kg</div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
-            </div>
-            <div className="mt-6">
+            </motion.div>
+            <motion.div variants={itemVariants}>
               <AreaChart24h data={chartData} />
-            </div>
+            </motion.div>
           </div>
 
-          <div>
+          <motion.div variants={itemVariants}>
             <ForecastDonut grid={forecastData.grid} solar={forecastData.solar} wind={forecastData.wind} />
-          </div>
+          </motion.div>
         </div>
 
         {/* Smart Recommendations */}
-        <div className="mb-10">
+        <motion.div variants={itemVariants} className="mb-10">
           <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-white">Smart Recommendations</h3>
           <div className="space-y-4">
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('battery') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('battery') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Battery optimization <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded ml-2">High Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Battery at optimal level. Consider partial discharge during peak hours.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 45 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹3,750/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('battery')}
                 disabled={optimizations.has('battery')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('battery') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('battery') ? 'Active' : 'Optimize Schedule'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('load') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('load') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Load balancing opportunity <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Consider shifting non-critical loads to match generation patterns.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 32 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹2,670/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('load')}
                 disabled={optimizations.has('load')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('load') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('load') ? 'Active' : 'Shift Loads'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
-            <div className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('workshop') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className={`p-4 rounded shadow flex justify-between items-center border transition-colors duration-300 ${optimizations.has('workshop') ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+            >
               <div>
                 <div className="font-medium text-slate-900 dark:text-white">Shift workshop loads to 2–4 PM <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded ml-2">Medium Impact</span></div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Solar generation peaks during these hours. Move energy-intensive operations here.</div>
                 {/* DOLLARS TO RS CONVERSION (Approx 56 * 83.5) */}
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Potential savings: ₹4,675/month</div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => handleOptimize('workshop')}
                 disabled={optimizations.has('workshop')}
                 className={`px-3 py-1 rounded transition-colors ${optimizations.has('workshop') ? 'bg-emerald-200 text-emerald-800 cursor-default' : 'bg-white dark:bg-slate-700 border dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600'}`}
               >
                 {optimizations.has('workshop') ? 'Active' : 'Schedule Loads'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </main>
+    </motion.main>
   );
 }

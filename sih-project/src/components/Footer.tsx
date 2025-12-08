@@ -17,7 +17,7 @@ export default function Footer() {
                 <Zap className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                EnergyFlow
+                GARUDA
               </span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
@@ -134,7 +134,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-border/40 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} EnergyFlow. All rights reserved.
+            © {currentYear} GARUDA. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
             Built with ❤️ by <span className="font-semibold text-foreground">Team Garuda</span>

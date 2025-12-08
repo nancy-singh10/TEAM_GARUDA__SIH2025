@@ -12,16 +12,40 @@ type TopMetricsProps = {
   grid_kw: number;
 };
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 }
+  }
+};
+
 export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid_kw }: TopMetricsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6"
+    >
       {/* Solar Card */}
       <Link href="/campusAdmin/solar">
         <motion.div
+          variants={cardVariants}
           whileHover={{ scale: 1.05, y: -5 }}
           whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6 shadow border border-yellow-100 dark:border-yellow-800 cursor-pointer group relative overflow-hidden"
+          className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6 shadow border border-yellow-100 dark:border-yellow-800 cursor-pointer group relative overflow-hidden h-full"
         >
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-yellow-400/0 to-amber-600/0 group-hover:from-yellow-400/10 group-hover:to-amber-600/10 transition-all duration-300"
@@ -43,10 +67,10 @@ export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid
       {/* Wind Card */}
       <Link href="/campusAdmin/wind">
         <motion.div
+          variants={cardVariants}
           whileHover={{ scale: 1.05, y: -5 }}
           whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-6 shadow border border-sky-100 dark:border-sky-800 cursor-pointer group relative overflow-hidden"
+          className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-6 shadow border border-sky-100 dark:border-sky-800 cursor-pointer group relative overflow-hidden h-full"
         >
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-sky-400/0 to-blue-600/0 group-hover:from-sky-400/10 group-hover:to-blue-600/10 transition-all duration-300"
@@ -68,10 +92,10 @@ export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid
       {/* Battery Card */}
       <Link href="/campusAdmin/battery">
         <motion.div
+          variants={cardVariants}
           whileHover={{ scale: 1.05, y: -5 }}
           whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-6 shadow border border-emerald-100 dark:border-emerald-800 cursor-pointer group relative overflow-hidden"
+          className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-6 shadow border border-emerald-100 dark:border-emerald-800 cursor-pointer group relative overflow-hidden h-full"
         >
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-emerald-400/0 to-green-600/0 group-hover:from-emerald-400/10 group-hover:to-green-600/10 transition-all duration-300"
@@ -86,7 +110,7 @@ export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${battery_percent}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
+                transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
                 className="h-3 bg-emerald-600 dark:bg-emerald-500"
               />
             </div>
@@ -98,10 +122,10 @@ export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid
       {/* Grid Card */}
       <Link href="/campusAdmin/grid">
         <motion.div
+          variants={cardVariants}
           whileHover={{ scale: 1.05, y: -5 }}
           whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-6 shadow border border-violet-100 dark:border-violet-800 cursor-pointer group relative overflow-hidden"
+          className="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-6 shadow border border-violet-100 dark:border-violet-800 cursor-pointer group relative overflow-hidden h-full"
         >
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-violet-400/0 to-purple-600/0 group-hover:from-violet-400/10 group-hover:to-purple-600/10 transition-all duration-300"
@@ -119,6 +143,6 @@ export default function TopMetricsRow({ solar_kw, wind_kw, battery_percent, grid
           </div>
         </motion.div>
       </Link>
-    </div>
+    </motion.div>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2, LineChart } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -57,17 +57,63 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
     }
   }, [user]);
 
+  const [activeAlert, setActiveAlert] = useState<Notification | null>(null);
+
   // Fetch notifications
   useEffect(() => {
     if (currentUser?.campus_admin_id) {
       fetch(`/api/messages/list?userId=${currentUser.campus_admin_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.messages) setNotifications(data.messages);
+          if (data.messages) {
+            setNotifications(data.messages);
+            // Check for unread alerts to show popup
+            const unreadAlert = data.messages.find((n: Notification) => n.type === 'alert' && !n.is_read);
+            if (unreadAlert) {
+              setActiveAlert(unreadAlert);
+            }
+          }
         })
         .catch(err => console.error('Failed to fetch notifications', err));
     }
   }, [currentUser]);
+
+  const dismissAlert = async () => {
+    if (!activeAlert) return;
+
+    // Optimistically hide popup
+    setActiveAlert(null);
+
+    // Mark as read in backend
+    try {
+      await fetch('/api/messages/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId: activeAlert.id })
+      });
+      // Update local listing
+      setNotifications(prev => prev.map(n => n.id === activeAlert.id ? { ...n, is_read: true } : n));
+    } catch (e) {
+      console.error("Failed to mark alert as read", e);
+    }
+  };
+
+  const deleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent triggering other clicks if any
+
+    // Optimistic Update
+    setNotifications(prev => prev.filter(n => n.id !== id));
+
+    try {
+      await fetch('/api/messages/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+    } catch (e) {
+      console.error("Failed to delete notification", e);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -130,8 +176,8 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
               <Zap className="w-5 h-5 text-white fill-current" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-emerald-900 dark:text-white leading-none">
-                Energy<span className="text-emerald-500">Dashboard</span>
+              <h1 className="text-xl font-bold text-emerald-900 dark:text-white leading-none tracking-tight">
+                GARUDA
               </h1>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">Campus Energy Management</p>
             </div>
@@ -142,9 +188,9 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
             {[
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'Digital Twin', href: '/campusAdmin/digital-twin', icon: Radio },
+              { name: 'Future Prediction', href: '/campusAdmin/futureprediction', icon: LineChart },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
-              { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -203,12 +249,12 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                     ) : (
                       <div className="divide-y divide-slate-100 dark:divide-slate-800">
                         {notifications.map((notif) => (
-                          <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group relative">
                             <div className="flex gap-3">
                               <div className={`mt-1 p-1.5 rounded-lg h-fit ${getNotificationStyle(notif.type)}`}>
                                 <MessageSquare className="w-3 h-3" />
                               </div>
-                              <div>
+                              <div className="flex-1 pr-6">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${notif.type === 'alert' ? 'bg-red-100 text-red-700' :
                                     notif.type === 'warning' ? 'bg-amber-100 text-amber-700' :
@@ -222,6 +268,13 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                                 </div>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">{notif.message}</p>
                               </div>
+                              <button
+                                onClick={(e) => deleteNotification(e, notif.id)}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                aria-label="Delete Notification"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -294,6 +347,9 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                     <Link href="/campusAdmin/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm rounded-xl transition-all">
                       <Settings className="w-4 h-4" /> View Profile
                     </Link>
+                    <Link href="/campusAdmin/export" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm rounded-xl transition-all">
+                      <Download className="w-4 h-4" /> Export Report
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors mt-1"
@@ -307,6 +363,40 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
           </div>
         </div>
       </div>
+      {/* Alert Popup Modal */}
+      {activeAlert && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animation-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-red-500 animate-in fade-in zoom-in duration-300">
+            <div className="bg-red-500 p-4 text-white flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <AlertTriangle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Critical Alert</h3>
+                  <p className="text-red-100 text-xs font-medium">Immediate Attention Required</p>
+                </div>
+              </div>
+              <button onClick={dismissAlert} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-700 dark:text-slate-300 text-base leading-relaxed">
+                {activeAlert.message}
+              </p>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={dismissAlert}
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-500/25 transition-all"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
