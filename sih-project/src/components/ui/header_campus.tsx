@@ -141,7 +141,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
           <nav className="hidden md:flex items-center gap-1">
             {[
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
-              { name: 'IoT', href: '/campusAdmin/iot', icon: Radio },
+              { name: 'Digital Twin', href: '/campusAdmin/digital-twin', icon: Radio },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
               { name: 'Export Report', href: '/campusAdmin/export', icon: Download },

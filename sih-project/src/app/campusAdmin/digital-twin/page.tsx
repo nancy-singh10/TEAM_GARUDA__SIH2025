@@ -86,7 +86,7 @@ const useDashboardLogic = () => {
 
   const fetchBuildings = async (id: number) => {
     try {
-      const res = await fetch(`/api/iot/buildings?campus_id=${id}`);
+      const res = await fetch(`/api/digital-twin/buildings?campus_id=${id}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -538,7 +538,7 @@ export default function DashboardPage() {
     <div className="h-screen w-full bg-slate-100 dark:bg-black overflow-hidden flex flex-col">
       <header className="h-14 bg-white dark:bg-[#161b22] border-b border-slate-200 dark:border-slate-800 flex items-center px-6 justify-between shrink-0">
         <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-white">
-          <span>⚡ IOT Orchestrator</span>
+          <span>⚡ Digital Twin Orchestrator</span>
         </div>
         <div className="text-xs font-mono text-slate-500">
           AUTO-PILOT: <span className={logic.isAutoPilot ? "text-purple-500 font-bold" : "text-orange-500"}>{logic.isAutoPilot ? "ON" : "OFF"}</span>
