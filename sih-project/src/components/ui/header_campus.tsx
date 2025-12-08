@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2 } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -95,6 +95,23 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
       setNotifications(prev => prev.map(n => n.id === activeAlert.id ? { ...n, is_read: true } : n));
     } catch (e) {
       console.error("Failed to mark alert as read", e);
+    }
+  };
+
+  const deleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent triggering other clicks if any
+
+    // Optimistic Update
+    setNotifications(prev => prev.filter(n => n.id !== id));
+
+    try {
+      await fetch('/api/messages/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+    } catch (e) {
+      console.error("Failed to delete notification", e);
     }
   };
 
@@ -232,12 +249,12 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                     ) : (
                       <div className="divide-y divide-slate-100 dark:divide-slate-800">
                         {notifications.map((notif) => (
-                          <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <div key={notif.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group relative">
                             <div className="flex gap-3">
                               <div className={`mt-1 p-1.5 rounded-lg h-fit ${getNotificationStyle(notif.type)}`}>
                                 <MessageSquare className="w-3 h-3" />
                               </div>
-                              <div>
+                              <div className="flex-1 pr-6">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${notif.type === 'alert' ? 'bg-red-100 text-red-700' :
                                     notif.type === 'warning' ? 'bg-amber-100 text-amber-700' :
@@ -251,6 +268,13 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                                 </div>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">{notif.message}</p>
                               </div>
+                              <button
+                                onClick={(e) => deleteNotification(e, notif.id)}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                aria-label="Delete Notification"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         ))}
