@@ -12,7 +12,7 @@ export interface BuildingData {
 }
 
 // Templates now serve as "Defaults" for the popup
-export const BUILDING_TEMPLATES: Record<BuildingType, Omit<BuildingData, "id" | "x" | "y" | "renewableRatio">> = {
+export const BUILDING_TEMPLATES: Record<BuildingType, Omit<BuildingData, "id" | "x" | "y" | "type" | "renewableRatio">> = {
   HOSTEL: { name: "Boys Hostel", baseLoad: 150, priority: "HIGH" },
   LAB: { name: "Chemistry Lab", baseLoad: 300, priority: "LOW" },
   CLASSROOM: { name: "Lecture Hall", baseLoad: 50, priority: "LOW" },
