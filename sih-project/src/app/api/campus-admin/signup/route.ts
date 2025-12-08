@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     // 3. Create Auth User
     // If email is missing, we generate a fake one for Auth purposes
-    const authEmail = data.email || `${data.username}@energyflow.app`;
+    const authEmail = data.email || `${data.username}@garuda.app`;
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: authEmail,
       password: data.password,
