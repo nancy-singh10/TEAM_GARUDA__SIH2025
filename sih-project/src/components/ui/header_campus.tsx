@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2 } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2, LineChart } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -188,9 +188,9 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
             {[
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'Digital Twin', href: '/campusAdmin/digital-twin', icon: Radio },
+              { name: 'Future Prediction', href: '/campusAdmin/futureprediction', icon: LineChart },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
-              { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -346,6 +346,9 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
                   <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                     <Link href="/campusAdmin/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm rounded-xl transition-all">
                       <Settings className="w-4 h-4" /> View Profile
+                    </Link>
+                    <Link href="/campusAdmin/export" className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm rounded-xl transition-all">
+                      <Download className="w-4 h-4" /> Export Report
                     </Link>
                     <button
                       onClick={handleLogout}
