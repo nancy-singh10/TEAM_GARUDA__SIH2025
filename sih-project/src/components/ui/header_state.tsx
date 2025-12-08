@@ -113,6 +113,7 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
               { name: 'Ranking', href: '/stateAdmin/campusRanking', icon: Trophy },
               { name: 'Broadcast', href: '/stateAdmin/broadcast', icon: Radio },
               { name: 'Tokens', href: '/stateAdmin/tokens', icon: Coins },
+              { name: 'Business Model', href: '/stateAdmin/businessModel', icon: Building },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (
