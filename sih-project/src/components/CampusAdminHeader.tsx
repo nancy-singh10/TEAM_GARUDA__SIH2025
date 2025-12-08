@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Zap, LayoutDashboard, FileDown, Network } from "lucide-react";
+import { Bot, Zap, LayoutDashboard, FileDown } from "lucide-react";
 import { ModeToggle } from "../app/components/ModeToggle";
 import ProfileButton from "./ProfileButton";
 
@@ -40,12 +40,6 @@ export default function CampusAdminHeader({ title }: CampusAdminHeaderProps) {
       href: "/campusAdmin/ai",
       icon: Bot,
       active: pathname.includes("/ai"),
-    },
-    {
-      name: "Decision Logic",
-      href: "/campusAdmin/decisionMaking",
-      icon: Network,
-      active: pathname.includes("/decisionMaking"),
     },
     {
       name: "Export Report",
