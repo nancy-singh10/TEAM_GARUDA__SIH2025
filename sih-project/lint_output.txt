@@ -1,0 +1,266 @@
+
+> sih-project@0.1.0 lint
+> eslint
+
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\seed_tokens.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\ai\page.tsx
+    8:10  warning  'ModeToggle' is defined but never used                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   93:9   error    React Hook "useBrowserTTS" is called in function "speakText" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  109:7   error    React Hook "useBrowserTTS" is called in function "speakText" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\campus-admin\capacity\route.ts
+  9:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\campus-admin\login\route.ts
+  66:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\campus-admin\signup\route.ts
+  106:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\campus-admin\simulate\route.ts
+  106:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\campus-admin\tokens\route.ts
+   22:29  error    'error' is never reassigned. Use 'const' instead    prefer-const
+   60:17  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+   74:40  warning  'amount_tokens' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  123:17  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\chat\route.ts
+    4:63  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+    7:49  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+   80:9   error  'message' is never reassigned. Use 'const' instead  prefer-const
+   80:18  error  'history' is never reassigned. Use 'const' instead  prefer-const
+  141:19  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  153:29  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\debug-ranking\route.ts
+  43:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\digital-twin\buildings\route.ts
+  33:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\export-report\route.ts
+  58:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  58:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  60:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  61:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  82:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\grid-data\route.ts
+  76:49  warning  'i' is defined but never used                @typescript-eslint/no-unused-vars
+  98:16  warning  'minute' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\messages\broadcast\route.ts
+  57:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\messages\list\route.ts
+  26:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\messages\send\route.ts
+  40:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\seed-fix\route.ts
+  15:13  error  'logs' is never reassigned. Use 'const' instead  prefer-const
+  46:17  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\seed-retry\route.ts
+  21:13  error  'logs' is never reassigned. Use 'const' instead  prefer-const
+  52:17  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\state-admin\login\route.ts
+  30:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\state-admin\metrics\route.ts
+   30:24  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   34:14  warning  'importErr' is defined but never used     @typescript-eslint/no-unused-vars
+   53:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:34  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   81:33  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:12  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\state-admin\signup\route.ts
+  72:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\state-admin\tokens\route.ts
+   5:27  warning  'request' is defined but never used         @typescript-eslint/no-unused-vars
+  42:17  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  54:17  warning  'data' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  54:23  warning  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  88:17  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\api\tts\route.ts
+  66:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\ai\page.tsx
+    8:10  warning  'ModeToggle' is defined but never used                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   93:9   error    React Hook "useBrowserTTS" is called in function "speakText" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  109:7   error    React Hook "useBrowserTTS" is called in function "speakText" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\DashboardContent.tsx
+  26:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\DashboardHeader.tsx
+  4:67  warning  'Bell' is defined but never used          @typescript-eslint/no-unused-vars
+  8:59  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\ProfileSlideOver.tsx
+  51:85  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  74:79  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\actions.ts
+  50:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\campusVisualizer.tsx
+  26:69  warning  'totalAvailablePower' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\dashboard\page.tsx
+  127:12  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\decisionMaking\page.tsx
+  122:14  error  'CampusAdminHeader' is not defined  react/jsx-no-undef
+  136:18  error  'Tabs' is not defined               react/jsx-no-undef
+  137:22  error  'TabsList' is not defined           react/jsx-no-undef
+  139:30  error  'TabsTrigger' is not defined        react/jsx-no-undef
+  161:34  error  'Card' is not defined               react/jsx-no-undef
+  162:38  error  'CardHeader' is not defined         react/jsx-no-undef
+  163:42  error  'CardTitle' is not defined          react/jsx-no-undef
+  164:42  error  'CardDescription' is not defined    react/jsx-no-undef
+  168:38  error  'CardContent' is not defined        react/jsx-no-undef
+  253:22  error  'Sun' is not defined                react/jsx-no-undef
+  254:49  error  'MorphingSun' is not defined        react/jsx-no-undef
+  263:22  error  'Wind' is not defined               react/jsx-no-undef
+  264:48  error  'Windmill' is not defined           react/jsx-no-undef
+  274:22  error  'Zap' is not defined                react/jsx-no-undef
+  283:22  error  'Home' is not defined               react/jsx-no-undef
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\digital-twin\CampusVisualizer.tsx
+    3:28  warning  'useEffect' is defined but never used            @typescript-eslint/no-unused-vars
+   28:69  warning  'totalAvailablePower' is defined but never used  @typescript-eslint/no-unused-vars
+  127:32  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\digital-twin\page.tsx
+   10:27   warning  'ArrowRight' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   10:52   warning  'Save' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  103:39   error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  221:9    error    'newBattery' is never reassigned. Use 'const' instead                                                                 prefer-const
+  266:6    warning  React Hook useEffect has a missing dependency: 'handleAdvanceTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  284:62   error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  287:32   warning  'setSolar' is assigned a value but never used                                                                         @typescript-eslint/no-unused-vars
+  287:42   warning  'setWind' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+  296:57   error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  382:138  warning  Expected an assignment or function call and instead saw an expression                                                 @typescript-eslint/no-unused-expressions
+  391:135  warning  Expected an assignment or function call and instead saw an expression                                                 @typescript-eslint/no-unused-expressions
+  509:100  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  523:54   error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\export\page.tsx
+  3:10  warning  'FileDown' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\grid\page.tsx
+  835:72  warning  'ArrowUpDown' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\layout.tsx
+  33:12  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\profile\ProfileForm.tsx
+  53:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\profile\page.tsx
+  40:12  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\solar\page.tsx
+   894:64  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  1008:22  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\tokens\page.tsx
+    8:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  154:63  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\visualFlow\page.tsx
+    5:129  warning  'Droplets' is defined but never used                             @typescript-eslint/no-unused-vars
+   10:10   warning  'Progress' is defined but never used                             @typescript-eslint/no-unused-vars
+   14:7    warning  'plantDetails' is assigned a value but never used                @typescript-eslint/no-unused-vars
+   21:7    warning  'plantData' is assigned a value but never used                   @typescript-eslint/no-unused-vars
+   28:7    warning  'solarUtilization' is assigned a value but never used            @typescript-eslint/no-unused-vars
+   97:69   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  567:67   warning  'id' is defined but never used                                   @typescript-eslint/no-unused-vars
+  771:7    warning  'connectorDots' is assigned a value but never used               @typescript-eslint/no-unused-vars
+  771:22   error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\campusAdmin\wind\page.tsx
+  495:97  warning  'ThermometerSun' is defined but never used                       @typescript-eslint/no-unused-vars
+  704:64  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\components\AuthCard.tsx
+    7:10   warning  'Zap' is defined but never used                                  @typescript-eslint/no-unused-vars
+    7:15   warning  'LayoutDashboard' is defined but never used                      @typescript-eslint/no-unused-vars
+    7:32   warning  'Radio' is defined but never used                                @typescript-eslint/no-unused-vars
+    7:39   warning  'Bot' is defined but never used                                  @typescript-eslint/no-unused-vars
+    7:44   warning  'Download' is defined but never used                             @typescript-eslint/no-unused-vars
+    7:54   warning  'User' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:60   warning  'LogOut' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:68   warning  'Settings' is defined but never used                             @typescript-eslint/no-unused-vars
+    7:78   warning  'MapPin' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:86   warning  'Mail' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:92   warning  'Building' is defined but never used                             @typescript-eslint/no-unused-vars
+    7:102  warning  'Moon' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:108  warning  'Sun' is defined but never used                                  @typescript-eslint/no-unused-vars
+    7:113  warning  'Bell' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:119  warning  'MessageSquare' is defined but never used                        @typescript-eslint/no-unused-vars
+    7:134  warning  'Coins' is defined but never used                                @typescript-eslint/no-unused-vars
+   49:9    warning  'router' is assigned a value but never used                      @typescript-eslint/no-unused-vars
+   64:22   error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  123:19   error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  403:18   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\stateAdmin\broadcast\page.tsx
+  50:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\stateAdmin\campusRanking\page.tsx
+  45:9  error  'monthlyStats' is never reassigned. Use 'const' instead  prefer-const
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\app\stateAdmin\tokens\page.tsx
+    4:49  warning  'DollarSign' is defined but never used    @typescript-eslint/no-unused-vars
+    8:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   48:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  162:64  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\components\ProfileButton.tsx
+  30:11  error  'userId' is never reassigned. Use 'const' instead  prefer-const
+  76:21  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\components\ProfileModal.tsx
+  76:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\components\TypewriterText.tsx
+  18:19  warning  'i' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\components\ui\header_campus.tsx
+    7:54  warning  'User' is defined but never used  @typescript-eslint/no-unused-vars
+  128:14  warning  'e' is defined but never used     @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\components\ui\header_state.tsx
+   7:47  warning  'User' is defined but never used  @typescript-eslint/no-unused-vars
+  76:14  warning  'e' is defined but never used     @typescript-eslint/no-unused-vars
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\src\lib\exportUtils.ts
+   8:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  56:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  91:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Code\1Full Stack Dev [AI + WEB]\SIH\TeamGaruda-SIH\sih-project\verify_admin_key.js
+  2:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 154 problems (94 errors, 60 warnings)
+  7 errors and 0 warnings potentially fixable with the `--fix` option.
+
