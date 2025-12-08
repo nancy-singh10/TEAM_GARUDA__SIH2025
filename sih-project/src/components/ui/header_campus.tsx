@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -57,17 +57,46 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
     }
   }, [user]);
 
+  const [activeAlert, setActiveAlert] = useState<Notification | null>(null);
+
   // Fetch notifications
   useEffect(() => {
     if (currentUser?.campus_admin_id) {
       fetch(`/api/messages/list?userId=${currentUser.campus_admin_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.messages) setNotifications(data.messages);
+          if (data.messages) {
+            setNotifications(data.messages);
+            // Check for unread alerts to show popup
+            const unreadAlert = data.messages.find((n: Notification) => n.type === 'alert' && !n.is_read);
+            if (unreadAlert) {
+              setActiveAlert(unreadAlert);
+            }
+          }
         })
         .catch(err => console.error('Failed to fetch notifications', err));
     }
   }, [currentUser]);
+
+  const dismissAlert = async () => {
+    if (!activeAlert) return;
+
+    // Optimistically hide popup
+    setActiveAlert(null);
+
+    // Mark as read in backend
+    try {
+      await fetch('/api/messages/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId: activeAlert.id })
+      });
+      // Update local listing
+      setNotifications(prev => prev.map(n => n.id === activeAlert.id ? { ...n, is_read: true } : n));
+    } catch (e) {
+      console.error("Failed to mark alert as read", e);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -307,6 +336,40 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
           </div>
         </div>
       </div>
+      {/* Alert Popup Modal */}
+      {activeAlert && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animation-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-red-500 animate-in fade-in zoom-in duration-300">
+            <div className="bg-red-500 p-4 text-white flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <AlertTriangle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Critical Alert</h3>
+                  <p className="text-red-100 text-xs font-medium">Immediate Attention Required</p>
+                </div>
+              </div>
+              <button onClick={dismissAlert} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-700 dark:text-slate-300 text-base leading-relaxed">
+                {activeAlert.message}
+              </p>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={dismissAlert}
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-500/25 transition-all"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
