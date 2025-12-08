@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Coins, TrendingUp, Settings, Activity } from 'lucide-react';
+import { Coins, TrendingUp, Settings, Activity, DollarSign } from 'lucide-react';
 
 export default function TokenManagementPage() {
     const [loading, setLoading] = useState(true);
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const [data, setData] = useState<any>(null);
     const [buyRate, setBuyRate] = useState(1.0); // Energy -> Token
     const [sellRate, setSellRate] = useState(1.0); // Token -> Energy
@@ -22,8 +21,8 @@ export default function TokenManagementPage() {
             setData(json);
             setBuyRate(json.settings.conversion_rate_energy_to_token);
             setSellRate(json.settings.conversion_rate_token_to_energy);
-        } catch {
-            console.error("Error fetching tokens data");
+        } catch (e) {
+            console.error(e);
         } finally {
             setLoading(false);
         }
@@ -46,7 +45,7 @@ export default function TokenManagementPage() {
             });
             alert('Rates updated successfully!');
             fetchData(); // Refresh
-        } catch {
+        } catch (e) {
             alert('Failed to update rates');
         } finally {
             setUpdating(false);

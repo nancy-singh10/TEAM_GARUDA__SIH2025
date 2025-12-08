@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Trophy, Radio, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Coins } from 'lucide-react';
+import { Zap, LayoutDashboard, Trophy, Radio, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Coins } from 'lucide-react';
 
 type StateUser = {
   admin_name: string;
@@ -73,7 +73,7 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
     // Call logout API (Optional)
     try {
       await fetch('/api/stateAdmin/logout', { method: 'POST' });
-    } catch {
+    } catch (e) {
       // Ignore error if route doesn't exist yet
     }
 
@@ -113,7 +113,6 @@ export default function HeaderState({ user }: { user: StateUser | null }) {
               { name: 'Ranking', href: '/stateAdmin/campusRanking', icon: Trophy },
               { name: 'Broadcast', href: '/stateAdmin/broadcast', icon: Radio },
               { name: 'Tokens', href: '/stateAdmin/tokens', icon: Coins },
-              { name: 'Business Model', href: '/stateAdmin/businessModel', icon: Building },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (

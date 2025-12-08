@@ -73,10 +73,9 @@ export default function ProfileModal({ isOpen, onClose, admin, onUpdate }: Profi
         onUpdate();
         onClose();
       }, 1500);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating profile:", err);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setError((err as any).message || "Failed to update profile");
+      setError(err.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
     }

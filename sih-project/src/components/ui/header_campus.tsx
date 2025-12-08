@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -96,7 +96,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
     // 2. Call logout API (Optional: Implement /api/campusAdmin/logout for HttpOnly cookies)
     try {
       await fetch('/api/campusAdmin/logout', { method: 'POST' });
-    } catch {
+    } catch (e) {
       // Ignore error if route doesn't exist yet
     }
 
@@ -143,6 +143,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'IoT', href: '/campusAdmin/iot', icon: Radio },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
+              { name: 'Model', href: '/campusAdmin/businessModel', icon: Building },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
               { name: 'Export Report', href: '/campusAdmin/export', icon: Download },
             ].map((link) => {

@@ -27,7 +27,7 @@ export default function ProfileButton() {
   const fetchAdminProfile = async () => {
     try {
       // 1. Try to get user from localStorage (set by AuthCard)
-      const userId = null;
+      let userId = null;
       try {
         const sessionStr = localStorage.getItem('sessionUser');
         if (sessionStr) {
@@ -73,7 +73,7 @@ export default function ProfileButton() {
       if (data) {
         setAdmin(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching admin profile:", error);
     } finally {
       setLoading(false);
