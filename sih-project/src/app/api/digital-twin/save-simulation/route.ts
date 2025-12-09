@@ -8,7 +8,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log("Received simulation data:", JSON.stringify(body, null, 2));
 
         const {
             campus_id,
@@ -30,13 +29,13 @@ export async function POST(request: Request) {
                     campus_id,
                     simulation_date: date,
                     simulation_time: time,
-                    wind_generated: wind_capacity,   // Mapped to new column
-                    solar_generated: solar_capacity, // Mapped to new column
-                    battery_output,
-                    battery_percentage,
-                    cost_saved: saved,               // Mapped to new column
-                    grid_used,                       // New Column
-                    total_load,                      // New Column
+                    wind_generated: Math.round(wind_capacity),
+                    solar_generated: Math.round(solar_capacity),
+                    battery_output: Math.round(battery_output),
+                    battery_percentage: Math.round(battery_percentage),
+                    cost_saved: Math.round(saved),
+                    grid_used: Math.round(grid_used),
+                    total_load: Math.round(total_load),
                     created_at: new Date().toISOString()
                 }
             ]);

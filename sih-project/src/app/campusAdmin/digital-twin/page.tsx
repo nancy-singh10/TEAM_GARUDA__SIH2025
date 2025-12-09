@@ -2007,7 +2007,7 @@ const useDashboardLogic = () => {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoPilot && hourlyLogs.length < 24) {
-      interval = setInterval(() => handleAdvanceTime(true), 2000);
+      interval = setInterval(() => handleAdvanceTime(true), 1000);
     }
     return () => clearInterval(interval);
   }, [isAutoPilot, hourlyLogs]);
