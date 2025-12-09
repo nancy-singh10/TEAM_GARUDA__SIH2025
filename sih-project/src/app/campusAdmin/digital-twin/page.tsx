@@ -2175,7 +2175,10 @@ const CurrentStateSection = ({ data }: any) => {
               <span className="flex items-center gap-1"><Sun size={12} /> Solar</span>
               <span>{Math.round(solar)} kW</span>
             </div>
-            <input type="range" min="0" max={capacities.solar} value={solar} onChange={(e) => !isAutoPilot && data.setSolar(Math.max(50, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-yellow-500" />
+            <div className="relative">
+              <input type="range" min="0" max={capacities.solar} value={solar} onChange={(e) => !isAutoPilot && data.setSolar(Math.max(50, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-yellow-500 relative z-10" />
+              <div className="absolute top-1/2 -translate-y-1/2 h-3 w-0.5 bg-red-400 z-0" style={{ left: `${(50 / capacities.solar) * 100}%` }} title="Min Threshold: 50kW" />
+            </div>
           </div>
 
           <div>
@@ -2183,7 +2186,10 @@ const CurrentStateSection = ({ data }: any) => {
               <span className="flex items-center gap-1"><Leaf size={12} /> Wind</span>
               <span>{Math.round(wind)} kW</span>
             </div>
-            <input type="range" min="0" max={capacities.wind} value={wind} onChange={(e) => !isAutoPilot && data.setWind(Math.max(10, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+            <div className="relative">
+              <input type="range" min="0" max={capacities.wind} value={wind} onChange={(e) => !isAutoPilot && data.setWind(Math.max(10, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500 relative z-10" />
+              <div className="absolute top-1/2 -translate-y-1/2 h-3 w-0.5 bg-red-400 z-0" style={{ left: `${(10 / capacities.wind) * 100}%` }} title="Min Threshold: 10kW" />
+            </div>
           </div>
         </div>
 
