@@ -16,13 +16,12 @@ export async function GET(request: Request) {
         const year = targetDate.getFullYear();
 
         // Call the Python ML API
-        const mlApiResponse = await fetch('http://localhost:8000/predict/day', {
+        const mlApiResponse = await fetch('http://localhost:8000/predict/day-wise', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                year: year,
                 month: month,
                 day: day
             }),
@@ -76,7 +75,7 @@ export async function GET(request: Request) {
             solar: totalSolar,
             wind: totalWind,
             costSaved: costSaved,
-            source: 'ML_RandomForest',
+            source: 'ML_DayWiseModel',
             hourlyData: hourlyPredictions // Passing this through in case we want to chart it later
         });
 
