@@ -34,11 +34,33 @@ except Exception as e:
     model_load_error = str(e)
     print(f"Failed to load Random Forest model: {e}")
 
+
+# Load Day Wise Model
+day_wise_model = None
+day_wise_model_load_error = None
+day_wise_model_path = os.path.join(os.path.dirname(__file__), "dayWiseModel.pkl")
+
+try:
+    if os.path.exists(day_wise_model_path):
+        day_wise_model = joblib.load(day_wise_model_path)
+        print("Day Wise model loaded successfully.")
+    else:
+        day_wise_model_load_error = f"Model file not found at {day_wise_model_path}"
+        print(day_wise_model_load_error)
+except Exception as e:
+    day_wise_model_load_error = str(e)
+    print(f"Failed to load Day Wise model: {e}")
+
 class PredictionRequest(BaseModel):
     past_values: List[float]
 
 class DayPredictionRequest(BaseModel):
     year: int
+    month: int
+    day: int
+
+
+class DayWisePredictionRequest(BaseModel):
     month: int
     day: int
 
@@ -88,6 +110,49 @@ def get_future_day_prediction(request: DayPredictionRequest):
         # Structure the results
         results = []
         # predictions is expected to be a numpy array with 4 columns
+        for i, row in enumerate(predictions):
+            results.append({
+                "Hour": i,
+                "Predicted_SRAD": float(row[0]),
+                "Predicted_WS": float(row[1]),
+                "Predicted_TM": float(row[2]),
+                "Predicted_HU": float(row[3])
+            })
+
+        return results
+
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+@app.post("/predict/day-wise")
+def predict_day_wise(request: DayWisePredictionRequest):
+    """
+    Predicts values for a specific day and month using the dayWiseModel.
+    Returns an array of 24 objects.
+    """
+    if day_wise_model is None:
+        raise HTTPException(status_code=503, detail=f"Day Wise model is not available. Error: {day_wise_model_load_error}")
+
+    try:
+        # User defined inputs
+        month = request.month
+        day = request.day
+        year = 2025 # Default year as model likely expects it
+        
+        # Create a list of 24 rows (one for each hour of the day)
+        future_data = []
+        for hour in range(24):
+            future_data.append([year, month, day, hour])
+
+        # Convert to DataFrame
+        prediction_input = pd.DataFrame(future_data, columns=['YEAR', 'MO', 'DY', 'HR'])
+
+        # Get predictions
+        predictions = day_wise_model.predict(prediction_input)
+
+        # Structure the results
+        results = []
         for i, row in enumerate(predictions):
             results.append({
                 "Hour": i,
