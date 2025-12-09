@@ -39,7 +39,8 @@ export async function POST(request: Request) {
       priority: b.priority,
       x: b.x,
       y: b.y,
-      status: b.status
+      status: b.status,
+      tokens: b.tokens || 0
     }));
 
     const { error } = await supabase.from("campus_buildings").insert(formattedBuildings);

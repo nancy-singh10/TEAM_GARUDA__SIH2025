@@ -32,6 +32,7 @@ export interface BuildingData {
   priority: "HIGH" | "LOW";
   renewableRatio: number; // 0 to 1
   status?: string;
+  tokens?: number; // Gamification tokens
 }
 
 // Total Load = 120 + 200 + 80 + 100 + 50 = 550 kW
