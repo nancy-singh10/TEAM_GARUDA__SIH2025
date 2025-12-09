@@ -1823,10 +1823,18 @@ const useDashboardLogic = () => {
     maxChargeRate: 500
   };
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    // Reset backend logs on mount to ensure a fresh session on refresh
+    fetch('/api/digital-twin/reset-simulation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campus_id: "CAMPUS_001" })
+    }).catch(err => console.error("Failed to reset logs on mount", err));
+  }, []);
   const totalLoad = buildings.reduce((sum, b) => sum + b.baseLoad, 0);
 
-  const saveSimulationData = async (s: number, w: number, b_output: number, saved_val: number, current_time: string) => {
+  const saveSimulationData = async (s: number, w: number, b_output: number, b_percent: number, saved_val: number, current_time: string) => {
     try {
       await fetch('/api/digital-twin/save-simulation', {
         method: 'POST',
@@ -1835,9 +1843,10 @@ const useDashboardLogic = () => {
           campus_id: "CAMPUS_001",
           date: selectedDate.toISOString().split('T')[0],
           time: current_time,
-          wind_capacity: capacities.wind,
-          solar_capacity: capacities.solar,
+          wind_capacity: w,
+          solar_capacity: s,
           battery_output: b_output,
+          battery_percentage: b_percent,
           saved: saved_val
         })
       });
@@ -1857,6 +1866,14 @@ const useDashboardLogic = () => {
       currentBaseTime.setHours(0, 0, 0, 0);
       setHourlyLogs([]);
       setTotalCostSaved(0);
+
+      // TRIGGER BACKEND RESET
+      fetch('/api/digital-twin/reset-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campus_id: "CAMPUS_001" })
+      }).then(() => console.log("Backend simulation auto-reset successful"))
+        .catch(err => console.error("Backend simulation auto-reset failed", err));
     }
 
     const updatedTime = new Date(currentBaseTime);
@@ -1927,7 +1944,7 @@ const useDashboardLogic = () => {
     // Auto-save logic
     if (saveToCloud) {
       console.log("Saving simulation data...", { hourStr, newSolar, newWind });
-      saveSimulationData(newSolar, newWind, batteryOutput, newSolar + newWind, hourStr)
+      saveSimulationData(newSolar, newWind, batteryOutput, newBatteryPercent, newSolar + newWind, hourStr)
         .then(() => console.log("Simulation data saved successfully"))
         .catch(err => console.error("Error saving simulation data:", err));
     }
@@ -1937,9 +1954,22 @@ const useDashboardLogic = () => {
     }
   };
 
-  const resetDay = () => {
+  const resetDay = async () => {
+    // 1. Reset frontend
     setHourlyLogs([]);
     setTotalCostSaved(0);
+    // 2. Reset Backend Logs
+    try {
+      await fetch('/api/digital-twin/reset-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campus_id: "CAMPUS_001" })
+      });
+      console.log("Backend simulation logs reset successfully.");
+    } catch (e) {
+      console.error("Failed to reset backend logs:", e);
+    }
+
     const d = new Date(); d.setHours(0, 0, 0, 0);
     setTime(d);
     setIsAutoPilot(true);

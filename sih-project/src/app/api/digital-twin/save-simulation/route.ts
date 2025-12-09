@@ -17,7 +17,8 @@ export async function POST(request: Request) {
             wind_capacity,
             solar_capacity,
             battery_output,
-            saved
+            saved,
+            battery_percentage
         } = body;
 
         const { error } = await supabase
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
                     wind_capacity,
                     solar_capacity,
                     battery_output,
+                    battery_percentage, // Added battery percentage
                     saved,
                     created_at: new Date().toISOString()
                 }
