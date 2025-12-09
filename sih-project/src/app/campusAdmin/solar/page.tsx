@@ -1428,8 +1428,8 @@ export default function SolarPage() {
           <button
             onClick={() => setActiveTab("overview")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "overview"
-                ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
           >
             <Activity className="h-4 w-4" />
@@ -1438,8 +1438,8 @@ export default function SolarPage() {
           <button
             onClick={() => setActiveTab("predictions")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "predictions"
-                ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
           >
             <BarChart3 className="h-4 w-4" />
@@ -1448,8 +1448,8 @@ export default function SolarPage() {
           <button
             onClick={() => setActiveTab("forecast")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "forecast"
-                ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              ? "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
           >
             <Cloud className="h-4 w-4" />
