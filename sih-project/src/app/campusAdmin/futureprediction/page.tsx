@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sun, Wind, IndianRupee, Calendar as CalendarIcon, Loader2, TrendingUp } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 import { SimpleCalendar } from "@/components/ui/simple-calendar";
 
@@ -14,6 +14,7 @@ export default function FuturePredictionPage() {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const [varianceData, setVarianceData] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     // Date Constraints
@@ -32,16 +33,28 @@ export default function FuturePredictionPage() {
         setLoading(true);
         setError(null);
         setResult(null);
+        setVarianceData([]);
 
         try {
+            // 1. Fetch Daily Prediction
             const res = await fetch(`/api/campusAdmin/prediction?date=${selectedDate}`);
             const data = await res.json();
 
             if (!res.ok) {
                 throw new Error(data.error || 'Failed to fetch prediction');
             }
-
             setResult(data);
+
+            // 2. Fetch Variance Data (Range)
+            const rangeRes = await fetch(`/api/campusAdmin/prediction/range?date=${selectedDate}`);
+            const rangeData = await rangeRes.json();
+
+            if (rangeRes.ok) {
+                setVarianceData(rangeData);
+            } else {
+                console.error("Failed to fetch variance data");
+            }
+
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -65,7 +78,7 @@ export default function FuturePredictionPage() {
             </div>
 
             {/* Control Panel */}
-            <Card className="max-w-xl border-slate-200/50 dark:border-slate-800/50 backdrop-blur-xl bg-white/50 dark:bg-slate-900/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 animate-in slide-in-from-left-4 fade-in duration-700 delay-150 relative">
+            <Card className="max-w-xl border-slate-200/50 dark:border-slate-800/50 backdrop-blur-xl bg-white/50 dark:bg-slate-900/50 shadow-xl shadow-slate-200/20 dark:shadow-black/20 animate-in slide-in-from-left-4 fade-in duration-700 delay-150 relative z-30">
                 <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50"></div>
                 <CardHeader>
                     <CardTitle className="text-xl">Select Prediction Target</CardTitle>
@@ -90,7 +103,7 @@ export default function FuturePredictionPage() {
                             {isCalendarOpen && (
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setIsCalendarOpen(false)} />
-                                    <div className="absolute top-full mt-2 left-0 z-20 animate-in zoom-in-95 fade-in duration-200">
+                                    <div className="absolute top-full mt-2 left-0 z-50 animate-in zoom-in-95 fade-in duration-200">
                                         <SimpleCalendar
                                             value={selectedDate ? new Date(selectedDate) : undefined}
                                             minDate={new Date(minDate)}
@@ -127,67 +140,43 @@ export default function FuturePredictionPage() {
             {result && (
                 <div className="space-y-8 animate-in slide-in-from-bottom-8 fade-in duration-700">
 
-                    {/* Hourly Charts */}
-                    {result.hourlyData && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
-                                <CardHeader className="px-0 pt-0">
-                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                                        <Sun className="w-5 h-5 text-orange-500" />
-                                        Hourly Solar Radiation Trend
-                                    </CardTitle>
-                                </CardHeader>
-                                <div className="h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={result.hourlyData}>
-                                            <defs>
-                                                <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
-                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'W/m²', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                                itemStyle={{ color: '#fdba74' }}
-                                            />
-                                            <Area type="monotone" dataKey="Predicted_SRAD" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorSolar)" name="Solar Radiation" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Card>
-
-                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
-                                <CardHeader className="px-0 pt-0">
-                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                                        <Wind className="w-5 h-5 text-blue-500" />
-                                        Hourly Wind Speed Trend
-                                    </CardTitle>
-                                </CardHeader>
-                                <div className="h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={result.hourlyData}>
-                                            <defs>
-                                                <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
-                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'm/s', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                                itemStyle={{ color: '#93c5fd' }}
-                                            />
-                                            <Area type="monotone" dataKey="Predicted_WS" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWind)" name="Wind Speed" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Card>
-                        </div>
+                    {/* Variance Graph Section */}
+                    {varianceData.length > 0 && (
+                        <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
+                            <CardHeader className="px-0 pt-0">
+                                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                                    Forecast Variance (3 Days Before - 2 Days After)
+                                </CardTitle>
+                                <p className="text-sm text-slate-500">Analysis of Wind and Solar trends around the selected date.</p>
+                            </CardHeader>
+                            <div className="h-[350px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={varianceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorSolarVar" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorWindVar" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+                                        <YAxis stroke="#94a3b8" fontSize={12} />
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                            labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                        />
+                                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                        <Area type="monotone" dataKey="solar" name="Solar Energy (kWh)" stroke="#f97316" fillOpacity={1} fill="url(#colorSolarVar)" strokeWidth={2} />
+                                        <Area type="monotone" dataKey="wind" name="Wind Energy (kWh)" stroke="#3b82f6" fillOpacity={1} fill="url(#colorWindVar)" strokeWidth={2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
                     )}
 
                     {/* Summary Cards */}
@@ -272,6 +261,69 @@ export default function FuturePredictionPage() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Hourly Charts */}
+                    {result.hourlyData && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
+                                <CardHeader className="px-0 pt-0">
+                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                        <Sun className="w-5 h-5 text-orange-500" />
+                                        Hourly Solar Radiation Trend
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={result.hourlyData}>
+                                            <defs>
+                                                <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
+                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'W/m²', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#fdba74' }}
+                                            />
+                                            <Area type="monotone" dataKey="Predicted_SRAD" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorSolar)" name="Solar Radiation" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+
+                            <Card className="p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-lg">
+                                <CardHeader className="px-0 pt-0">
+                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                        <Wind className="w-5 h-5 text-blue-500" />
+                                        Hourly Wind Speed Trend
+                                    </CardTitle>
+                                </CardHeader>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={result.hourlyData}>
+                                            <defs>
+                                                <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                                            <XAxis dataKey="Hour" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}:00`} />
+                                            <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'm/s', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8' } }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#93c5fd' }}
+                                            />
+                                            <Area type="monotone" dataKey="Predicted_WS" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWind)" name="Wind Speed" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
