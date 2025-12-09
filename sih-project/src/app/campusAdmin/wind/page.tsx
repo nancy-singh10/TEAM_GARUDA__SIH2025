@@ -496,6 +496,7 @@ import { ArrowLeft, Wind, TrendingUp, Calendar, Zap, Gauge, BarChart3, Activity,
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 // --- Types ---
 interface WindData {
@@ -540,49 +541,172 @@ interface ForecastDay {
 export default function WindPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "predictions" | "forecast">("overview");
-  
-  // --- State Initialization ---
+
+  // --- State ---
   const [loading, setLoading] = useState(true);
-  const [windData, setWindData] = useState<WindData | null>(null);
+  const [windData, setWindData] = useState<WindData>({
+    current: 0,
+    peak: 0,
+    today: 0,
+    capacity: 150,
+    windSpeed: 0,
+    turbines: 12,
+    predictionAccuracy: 89.7,
+  });
   const [hourlyGeneration, setHourlyGeneration] = useState<HourlyData[]>([]);
   const [predictionVsActual, setPredictionVsActual] = useState<PredictionData[]>([]);
   const [speedVsProduction, setSpeedVsProduction] = useState<SpeedCorrelation[]>([]);
   const [weeklyForecast, setWeeklyForecast] = useState<ForecastDay[]>([]);
 
-  // --- Fetch Data ---
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/wind-data");
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
+    const todayStr = new Date().toISOString().split('T')[0];
+    let mounted = true;
 
-        setWindData(data.windData);
-        setHourlyGeneration(data.hourlyGeneration);
-        setPredictionVsActual(data.predictionVsActual);
-        setSpeedVsProduction(data.speedVsProduction);
-        setWeeklyForecast(data.weeklyForecast);
-      } catch (error) {
-        console.error("Error fetching wind data:", error);
-      } finally {
-        setLoading(false);
+    // --- HELPER: Process Logs ---
+    const updateDashboardFromLogs = (logs: any[]) => {
+      if (!logs || logs.length === 0) return;
+
+      const latestLog = logs[logs.length - 1];
+      const currentGen = Number(latestLog.wind_generated) || 0;
+
+      // Calculate derived stats
+      const peakSoFar = Math.max(...logs.map((l: any) => Number(l.wind_generated)), 0);
+      const todayTotal = logs.reduce((acc: number, curr: any) => acc + (Number(curr.wind_generated) || 0), 0);
+
+      // Simulate wind speed based on generation (Linear approx: 0kW=3m/s, 150kW=15m/s)
+      const currentSpeed = Number((3 + (currentGen / 150) * 12).toFixed(1));
+
+      if (mounted) {
+        setWindData(prev => ({
+          ...prev,
+          current: Math.round(currentGen),
+          peak: Math.round(peakSoFar),
+          today: Math.round(todayTotal),
+          windSpeed: currentSpeed
+        }));
+
+        // Hourly Data
+        const formattedHourly: HourlyData[] = logs.map((log: any) => {
+          const gen = Number(log.wind_generated);
+          return {
+            hour: log.simulation_time,
+            generation: gen,
+            speed: Number((3 + (gen / 150) * 12).toFixed(1))
+          };
+        });
+        setHourlyGeneration(formattedHourly);
+
+        // Predictions (Simulated)
+        const predictions: PredictionData[] = logs.map((log: any) => {
+          const actual = Number(log.wind_generated);
+          const timeStr = log.simulation_time || "00:00";
+          return {
+            hour: timeStr,
+            predicted: Math.round(actual * (0.8 + Math.random() * 0.4)), // +/- 20%
+            actual: actual,
+            speed: Number((3 + (actual / 150) * 12).toFixed(1))
+          };
+        });
+        setPredictionVsActual(predictions);
+
+        // Correlations
+        const correlations: SpeedCorrelation[] = predictions.map(p => ({
+          speed: p.speed,
+          production: p.actual
+        })).sort((a, b) => a.speed - b.speed).filter((_, i) => i % 2 === 0).slice(0, 10);
+        setSpeedVsProduction(correlations);
       }
-    }
-    fetchData();
+    };
+
+    // --- FETCH & SUBSCRIBE ---
+    const init = async () => {
+      try {
+        // 1. Initial Fetch
+        const { data, error } = await supabase
+          .from('digital_twin_simulation_logs')
+          .select('*')
+          .eq('campus_id', 'CAMPUS_001')
+          .eq('simulation_date', todayStr)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        // Generate Forecast (Static/Random)
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const todayD = new Date();
+        const forecast: ForecastDay[] = Array.from({ length: 7 }).map((_, i) => {
+          const d = new Date(todayD); d.setDate(todayD.getDate() + i);
+          const isWindy = Math.random() > 0.4;
+          return {
+            day: i,
+            date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            dayName: days[d.getDay()],
+            total: Math.round(isWindy ? 500 + Math.random() * 200 : 200 + Math.random() * 100),
+            peak: Math.round(isWindy ? 140 : 80),
+            weather: isWindy ? "Windy" : "Breezy",
+            avgSpeed: Number((isWindy ? 8 + Math.random() * 4 : 4 + Math.random() * 3).toFixed(1)),
+            hourly: Array.from({ length: 3 }).map((_, h) => ({
+              hour: h === 0 ? "08:00" : h === 1 ? "14:00" : "20:00",
+              prediction: Math.round(Math.random() * 100),
+              speed: 5 + Math.random() * 5
+            }))
+          };
+        });
+        if (mounted) setWeeklyForecast(forecast);
+
+        // Update from fetched logs
+        updateDashboardFromLogs(data || []);
+      } catch (err) {
+        console.error("Wind Data Error:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    init();
+
+    // 2. Realtime Subscription
+    const subscription = supabase
+      .channel('wind-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'digital_twin_simulation_logs', filter: `campus_id=eq.CAMPUS_001` },
+        (payload) => {
+          if (payload.new.simulation_date === todayStr) {
+            // Incremental update for efficiency
+            setWindData(prev => {
+              const val = Number(payload.new.wind_generated);
+              return {
+                ...prev,
+                current: val,
+                peak: Math.max(prev.peak, val),
+                today: prev.today + val,
+                windSpeed: Number((3 + (val / 150) * 12).toFixed(1))
+              };
+            });
+
+            setHourlyGeneration(prev => [
+              ...prev,
+              {
+                hour: payload.new.simulation_time,
+                generation: Number(payload.new.wind_generated),
+                speed: Number((3 + (Number(payload.new.wind_generated) / 150) * 12).toFixed(1))
+              }
+            ]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-sky-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
-          <p className="text-sky-600 font-medium">Loading wind data...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center dark:text-white">Loading Wind Analytics...</div>;
   }
-
-  if (!windData) return <div className="p-10 text-center">No wind data found.</div>;
 
   const maxGen = Math.max(...hourlyGeneration.map((h) => h.generation), 1);
   const maxPred = Math.max(...predictionVsActual.map(d => Math.max(d.predicted, d.actual)), 1);
@@ -629,33 +753,30 @@ export default function WindPage() {
         >
           <button
             onClick={() => setActiveTab("overview")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "overview"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "overview"
+              ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <Activity className="h-4 w-4" />
             Overview
           </button>
           <button
             onClick={() => setActiveTab("predictions")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "predictions"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "predictions"
+              ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <BarChart3 className="h-4 w-4" />
             Predictions
           </button>
           <button
             onClick={() => setActiveTab("forecast")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "forecast"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "forecast"
+              ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <Cloud className="h-4 w-4" />
             7-Day Forecast

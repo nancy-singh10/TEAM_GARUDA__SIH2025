@@ -3,12 +3,14 @@
 import { ArrowLeft, Battery, TrendingUp, Calendar, Zap, BatteryCharging, Activity, BarChart3, Thermometer, Heart, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+import { supabase } from "@/lib/supabaseClient";
 
 export default function BatteryPage() {
   const [activeTab, setActiveTab] = useState<"charge" | "cells" | "temperature" | "health">("charge");
 
-  const batteryData = {
+  const [batteryData, setBatteryData] = useState({
     current: 81,
     capacity: 2000,
     stored: 1620,
@@ -16,10 +18,10 @@ export default function BatteryPage() {
     chargeRate: 15.3,
     health: 94,
     cycleCount: 342,
-  };
+  });
 
-  // Cell voltage data
-  const cellVoltages = [
+  const [hourlyStatus, setHourlyStatus] = useState<any[]>([]);
+  const [cellVoltages, setCellVoltages] = useState<any[]>([
     { id: 1, voltage: 3.82, temp: 28.0, status: "normal" },
     { id: 2, voltage: 3.81, temp: 28.2, status: "normal" },
     { id: 3, voltage: 3.82, temp: 28.1, status: "normal" },
@@ -28,7 +30,101 @@ export default function BatteryPage() {
     { id: 6, voltage: 3.82, temp: 28.2, status: "normal" },
     { id: 7, voltage: 3.81, temp: 27.9, status: "normal" },
     { id: 8, voltage: 3.82, temp: 28.1, status: "normal" },
-  ];
+  ]);
+
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    let mounted = true;
+
+    const updateDashboard = (logs: any[]) => {
+      if (!logs || logs.length === 0) return;
+
+      const latest = logs[logs.length - 1];
+      const pct = Number(latest.battery_percentage);
+      const output = Number(latest.battery_output); // Discharge KW
+
+      // Logic: If output > 0, Discharging. Else Charging.
+      // Rate: If Discharging, rate = output. If Charging, simulate ~150kW or derive.
+      const isCharging = output === 0;
+      const rate = isCharging ? 150.5 : output;
+
+      // Calculate Cycles: 342 + sum(output / capacity)
+      const totalDischarge = logs.reduce((acc: number, l: any) => acc + Number(l.battery_output || 0), 0);
+      const additionalCycles = totalDischarge / 2000;
+
+      if (mounted) {
+        setBatteryData({
+          current: pct,
+          capacity: 2000,
+          stored: Math.round(2000 * (pct / 100)),
+          charging: isCharging,
+          chargeRate: Math.round(rate * 10) / 10,
+          health: 94, // Static for MVP
+          cycleCount: Math.floor(342 + additionalCycles)
+        });
+
+        // Hourly Status
+        const history = logs.map((l: any) => ({
+          hour: l.simulation_time,
+          level: Number(l.battery_percentage),
+          status: Number(l.battery_output) > 0 ? "discharging" : "charging"
+        }));
+        setHourlyStatus(history);
+
+        // Update Cells based on %
+        // 0% -> 3.2V, 100% -> 4.2V
+        const baseV = 3.2 + (pct / 100) * 1.0;
+        setCellVoltages(prev => prev.map(c => ({
+          ...c,
+          voltage: Number((baseV + (Math.random() * 0.05 - 0.025)).toFixed(2)),
+          temp: Number((28 + (isCharging ? 2 : 0) + Math.random()).toFixed(1))
+        })));
+      }
+    };
+
+    const init = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('digital_twin_simulation_logs')
+          .select('*')
+          .eq('campus_id', 'CAMPUS_001')
+          .eq('simulation_date', todayStr)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+        updateDashboard(data || []);
+      } catch (e) {
+        console.error("Battery Data Error", e);
+      }
+    };
+    init();
+
+    const sub = supabase
+      .channel('battery-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'digital_twin_simulation_logs', filter: `campus_id=eq.CAMPUS_001` },
+        (payload) => {
+          if (payload.new.simulation_date === todayStr) {
+            // Initial fetch gets all, subscription adds one by one.
+            // For simplicity, re-invoking update with accumulated logic inside state setter might be complex.
+            // We will just fetch the latest single row and update state incrementally.
+            const newLog = payload.new;
+
+            // To update cycles correctly including history, we'd need the full history or keep a running sum.
+            // Let's do a quick re-fetch for accuracy or just maintain state.
+            // Re-fetching 24 rows is cheap and robust.
+            init();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(sub);
+    };
+  }, []);
 
   // Temperature monitoring data (hourly from 12:00 to 14:00)
   const thermalData = [
@@ -59,16 +155,7 @@ export default function BatteryPage() {
     roundTrip: 93 + Math.random() * 2,
   }));
 
-  const hourlyStatus = [
-    { hour: "12 AM", level: 75, status: "discharging" },
-    { hour: "3 AM", level: 68, status: "discharging" },
-    { hour: "6 AM", level: 62, status: "discharging" },
-    { hour: "9 AM", level: 58, status: "charging" },
-    { hour: "12 PM", level: 67, status: "charging" },
-    { hour: "3 PM", level: 76, status: "charging" },
-    { hour: "6 PM", level: 81, status: "charging" },
-    { hour: "9 PM", level: 78, status: "discharging" },
-  ];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-background to-green-50 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20 py-10 px-6">
@@ -121,7 +208,7 @@ export default function BatteryPage() {
               <BatteryCharging className="h-16 w-16 text-emerald-200" />
             </motion.div>
           </div>
-          
+
           <div className="w-full bg-white/20 rounded-full h-6 overflow-hidden mb-4">
             <motion.div
               initial={{ width: 0 }}
@@ -161,44 +248,40 @@ export default function BatteryPage() {
         >
           <button
             onClick={() => setActiveTab("charge")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "charge"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "charge"
+              ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <BarChart3 className="h-4 w-4" />
             Charge Profile
           </button>
           <button
             onClick={() => setActiveTab("cells")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "cells"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "cells"
+              ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <Battery className="h-4 w-4" />
             Cell Balance
           </button>
           <button
             onClick={() => setActiveTab("temperature")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "temperature"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "temperature"
+              ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <Thermometer className="h-4 w-4" />
             Temperature Monitoring
           </button>
           <button
             onClick={() => setActiveTab("health")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-              activeTab === "health"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${activeTab === "health"
+              ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg"
+              : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
           >
             <Heart className="h-4 w-4" />
             Health & Efficiency
@@ -274,11 +357,10 @@ export default function BatteryPage() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-medium">{item.hour}</div>
-                      <div className={`text-xs px-2 py-1 rounded ${
-                        item.status === "charging" 
-                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                          : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                      }`}>
+                      <div className={`text-xs px-2 py-1 rounded ${item.status === "charging"
+                        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                        : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                        }`}>
                         {item.status === "charging" ? "⚡ Charging" : "📉 Discharging"}
                       </div>
                     </div>
@@ -287,11 +369,10 @@ export default function BatteryPage() {
                         initial={{ width: 0 }}
                         animate={{ width: `${item.level}%` }}
                         transition={{ duration: 1, delay: 0.9 + index * 0.08, ease: "easeOut" }}
-                        className={`h-full ${
-                          item.status === "charging"
-                            ? "bg-gradient-to-r from-emerald-400 to-green-600"
-                            : "bg-gradient-to-r from-orange-400 to-red-500"
-                        } flex items-center justify-end pr-3`}
+                        className={`h-full ${item.status === "charging"
+                          ? "bg-gradient-to-r from-emerald-400 to-green-600"
+                          : "bg-gradient-to-r from-orange-400 to-red-500"
+                          } flex items-center justify-end pr-3`}
                       >
                         <span className="text-xs font-semibold text-white">{item.level}%</span>
                       </motion.div>
@@ -315,7 +396,7 @@ export default function BatteryPage() {
             >
               <h2 className="text-xl font-semibold mb-2">Cell Voltage Monitor</h2>
               <p className="text-sm text-muted-foreground mb-6">Individual cell performance</p>
-              
+
               <div className="space-y-4">
                 {cellVoltages.map((cell, index) => (
                   <motion.div
@@ -361,7 +442,7 @@ export default function BatteryPage() {
             >
               <h2 className="text-xl font-semibold mb-2 text-white">Health Radar</h2>
               <p className="text-sm text-slate-300 mb-6">Multi-point diagnostic scan</p>
-              
+
               <div className="flex items-center justify-center h-80 bg-slate-900/50 rounded-lg p-6">
                 <svg viewBox="0 0 200 200" className="w-full h-full max-w-sm">
                   {/* Pentagon outline (target) - Purple */}
@@ -372,7 +453,7 @@ export default function BatteryPage() {
                     strokeWidth="2"
                     opacity="0.5"
                   />
-                  
+
                   {/* Health score pentagon - Emerald filled */}
                   <motion.polygon
                     initial={{ scale: 0 }}
@@ -403,7 +484,7 @@ export default function BatteryPage() {
                     stroke="#10b981"
                     strokeWidth="3"
                   />
-                  
+
                   {/* Labels - White text */}
                   <text x="100" y="15" textAnchor="middle" className="text-xs font-medium" fill="white">Capacity</text>
                   <text x="190" y="85" textAnchor="start" className="text-xs font-medium" fill="white">Resistance</text>
@@ -437,19 +518,19 @@ export default function BatteryPage() {
           >
             <h2 className="text-xl font-semibold mb-2">Thermal Monitoring</h2>
             <p className="text-sm text-muted-foreground mb-6">Pack and individual cell temperatures</p>
-            
+
             <div className="relative h-64 mb-8">
               <svg viewBox="0 0 800 200" className="w-full h-full">
                 {/* Grid lines */}
                 <line x1="40" y1="20" x2="40" y2="180" stroke="currentColor" strokeWidth="1" className="text-border" />
                 <line x1="40" y1="180" x2="780" y2="180" stroke="currentColor" strokeWidth="1" className="text-border" />
-                
+
                 {/* Y-axis labels */}
                 <text x="30" y="25" textAnchor="end" className="text-xs fill-current text-muted-foreground">36</text>
                 <text x="30" y="65" textAnchor="end" className="text-xs fill-current text-muted-foreground">27</text>
                 <text x="30" y="145" textAnchor="end" className="text-xs fill-current text-muted-foreground">18</text>
                 <text x="30" y="185" textAnchor="end" className="text-xs fill-current text-muted-foreground">9</text>
-                
+
                 {/* Temperature lines */}
                 {/* Cell1 (orange) */}
                 <motion.polyline
@@ -464,7 +545,7 @@ export default function BatteryPage() {
                 {thermalData.map((d, i) => (
                   <circle key={`c1-${i}`} cx={50 + i * 100} cy={180 - (d.cell1 - 18) * 8} r="4" fill="#f97316" />
                 ))}
-                
+
                 {/* Cell8 (blue) */}
                 <motion.polyline
                   initial={{ pathLength: 0 }}
@@ -478,7 +559,7 @@ export default function BatteryPage() {
                 {thermalData.map((d, i) => (
                   <circle key={`c8-${i}`} cx={50 + i * 100} cy={180 - (d.cell8 - 18) * 8} r="4" fill="#3b82f6" />
                 ))}
-                
+
                 {/* Pack (emerald) */}
                 <motion.polyline
                   initial={{ pathLength: 0 }}
@@ -492,7 +573,7 @@ export default function BatteryPage() {
                 {thermalData.map((d, i) => (
                   <circle key={`p-${i}`} cx={50 + i * 100} cy={180 - (d.pack - 18) * 8} r="4" fill="#10b981" />
                 ))}
-                
+
                 {/* X-axis labels */}
                 {thermalData.map((d, i) => (
                   <text key={`x-${i}`} x={50 + i * 100} y="195" textAnchor="middle" className="text-xs fill-current text-muted-foreground">
@@ -500,7 +581,7 @@ export default function BatteryPage() {
                   </text>
                 ))}
               </svg>
-              
+
               {/* Hover tooltip simulation */}
               <div className="absolute top-1/3 left-1/4 bg-white dark:bg-slate-700 rounded-lg shadow-lg p-3 border border-border">
                 <div className="text-xs font-semibold mb-1">12:00</div>
@@ -539,19 +620,19 @@ export default function BatteryPage() {
             >
               <h2 className="text-xl font-semibold mb-2">Efficiency Analysis</h2>
               <p className="text-sm text-muted-foreground mb-6">Round-trip energy efficiency</p>
-              
+
               <div className="relative h-64 mb-8">
                 <svg viewBox="0 0 800 200" className="w-full h-full">
                   {/* Grid */}
                   <line x1="40" y1="20" x2="40" y2="180" stroke="currentColor" strokeWidth="1" className="text-border" />
                   <line x1="40" y1="180" x2="780" y2="180" stroke="currentColor" strokeWidth="1" className="text-border" />
-                  
+
                   {/* Y-axis */}
                   <text x="30" y="25" textAnchor="end" className="text-xs fill-current text-muted-foreground">100</text>
                   <text x="30" y="65" textAnchor="end" className="text-xs fill-current text-muted-foreground">97</text>
                   <text x="30" y="145" textAnchor="end" className="text-xs fill-current text-muted-foreground">89</text>
                   <text x="30" y="185" textAnchor="end" className="text-xs fill-current text-muted-foreground">85</text>
-                  
+
                   {/* Efficiency lines */}
                   {/* Charge (purple dashed) */}
                   <motion.polyline
@@ -564,7 +645,7 @@ export default function BatteryPage() {
                     strokeWidth="2"
                     strokeDasharray="4,4"
                   />
-                  
+
                   {/* Discharge (orange dashed) */}
                   <motion.polyline
                     initial={{ pathLength: 0 }}
@@ -576,7 +657,7 @@ export default function BatteryPage() {
                     strokeWidth="2"
                     strokeDasharray="4,4"
                   />
-                  
+
                   {/* Round trip (emerald solid) */}
                   <motion.polyline
                     initial={{ pathLength: 0 }}
@@ -590,7 +671,7 @@ export default function BatteryPage() {
                   {efficiencyData.filter((_, i) => i % 4 === 0).map((d, i) => (
                     <circle key={i} cx={50 + i * 148} cy={180 - (d.roundTrip - 85) * 8} r="3" fill="#10b981" />
                   ))}
-                  
+
                   {/* X-axis labels */}
                   {[0, 4, 8, 12, 16, 20].map((val) => (
                     <text key={val} x={50 + val * 37} y="195" textAnchor="middle" className="text-xs fill-current text-muted-foreground">
