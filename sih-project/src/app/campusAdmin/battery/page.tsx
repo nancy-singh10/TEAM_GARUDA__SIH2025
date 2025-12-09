@@ -1,14 +1,20 @@
 "use client";
 
-import { ArrowLeft, Battery, TrendingUp, Calendar, Zap, BatteryCharging, Activity, BarChart3, Thermometer, Heart, AlertCircle } from "lucide-react";
+import { ArrowLeft, Battery, TrendingUp, Calendar, Zap, BatteryCharging, Activity, BarChart3, Thermometer, Heart, AlertCircle, Flame, Ban, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 
 import { supabase } from "@/lib/supabaseClient";
 
 export default function BatteryPage() {
   const [activeTab, setActiveTab] = useState<"charge" | "cells" | "temperature" | "health">("charge");
+
+  // --- OVERHEAT SIMULATION STATE ---
+  const [showOverheatAlert, setShowOverheatAlert] = useState(false);
+  const [isOverheated, setIsOverheated] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
+  const isOverheatedRef = useRef(false); // Ref for subscription callback access
 
   const [batteryData, setBatteryData] = useState({
     current: 81,
@@ -19,6 +25,63 @@ export default function BatteryPage() {
     health: 94,
     cycleCount: 342,
   });
+
+  // --- SIMULATION TRIGGER ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ',') {
+        // Trigger sequence: Wait 2s then alert
+        setTimeout(() => setShowOverheatAlert(true), 2000);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // --- COOLDOWN TIMER ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isOverheated && cooldownTime > 0) {
+      interval = setInterval(() => {
+        setCooldownTime(prev => {
+          if (prev <= 1) {
+            // Cooldown complete
+            setIsOverheated(false);
+            isOverheatedRef.current = false;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isOverheated, cooldownTime]);
+
+  // Activate Overheat Mode
+  const handleEmergencyShutdown = () => {
+    setShowOverheatAlert(false);
+    setIsOverheated(true);
+    isOverheatedRef.current = true;
+    setCooldownTime(15); // 15s cooldown
+
+    // Force Critical State Immediately
+    setBatteryData(prev => ({
+      ...prev,
+      current: 0,
+      stored: 0,
+      charging: false,
+      chargeRate: 0,
+      health: 45 // Drop health temporarily
+    }));
+
+    // Critical Voltages
+    setCellVoltages(prev => prev.map(c => ({
+      ...c,
+      voltage: Number((2.5 + Math.random()).toFixed(2)), // Critical low/unstable
+      temp: Number((95 + Math.random() * 10).toFixed(1)), // > 90 degrees
+      status: "critical"
+    })));
+  };
 
   const [hourlyStatus, setHourlyStatus] = useState<any[]>([]);
   const [cellVoltages, setCellVoltages] = useState<any[]>([
@@ -37,6 +100,7 @@ export default function BatteryPage() {
     let mounted = true;
 
     const updateDashboard = (logs: any[]) => {
+      if (isOverheatedRef.current) return;
       if (!logs || logs.length === 0) return;
 
       const latest = logs[logs.length - 1];
@@ -194,7 +258,10 @@ export default function BatteryPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-8 shadow-2xl text-white mb-8"
+          className={`${isOverheated
+            ? "bg-gradient-to-br from-red-600 to-red-800 animate-pulse"
+            : "bg-gradient-to-br from-emerald-500 to-green-600"} 
+            rounded-2xl p-8 shadow-2xl text-white mb-8 transition-colors duration-500`}
         >
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -227,9 +294,9 @@ export default function BatteryPage() {
 
           <div className="mt-6 pt-6 border-t border-white/20 flex items-center justify-between">
             <div>
-              <div className="text-emerald-100 text-sm">Status</div>
+              <div className={isOverheated ? "text-red-200 text-sm" : "text-emerald-100 text-sm"}>Status</div>
               <div className="text-xl font-semibold">
-                {batteryData.charging ? "⚡ Charging" : "📉 Discharging"}
+                {isOverheated ? "🔴 CRITICAL SHUTDOWN" : (batteryData.charging ? "⚡ Charging" : "📉 Discharging")}
               </div>
             </div>
             <div>
@@ -735,6 +802,82 @@ export default function BatteryPage() {
           </div>
         )}
       </div>
+
+      {/* --- OVERHEAT ALERT MODAL --- */}
+      <AnimatePresence>
+        {showOverheatAlert && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-red-950 border-2 border-red-600 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(220,38,38,0.5)] text-center relative overflow-hidden"
+            >
+              {/* Pulsing background effect */}
+              <div className="absolute inset-0 bg-red-600/10 animate-pulse pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="mb-6 p-4 bg-red-900/50 rounded-full animate-bounce">
+                  <Flame className="w-12 h-12 text-red-500" />
+                </div>
+
+                <h2 className="text-3xl font-bold text-white mb-2">THERMAL RUNAWAY</h2>
+                <div className="text-red-400 font-mono text-xl font-bold mb-6">TEMP CRITICAL: 92.4°C</div>
+
+                <p className="text-red-200 mb-8 text-sm leading-relaxed">
+                  Battery Pack #1 internal temperature has exceeded safety thresholds. Immediate automated shutdown required to prevent catastrophic failure.
+                </p>
+
+                <button
+                  onClick={handleEmergencyShutdown}
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-lg rounded-xl shadow-lg border border-red-500 transition-all active:scale-95 flex items-center justify-center gap-3"
+                >
+                  <ShieldAlert className="w-5 h-5 animate-pulse" />
+                  INITIATE EMERGENCY SHUTDOWN
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- SHUTDOWN STATE OVERLAY --- */}
+      <AnimatePresence>
+        {isOverheated && (
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-6 right-6 z-40 bg-red-950/90 border border-red-600 text-red-100 p-6 rounded-2xl shadow-2xl backdrop-blur-md max-w-sm"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-900/50 rounded-lg shrink-0">
+                <Ban className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white mb-1">System Locked</h3>
+                <p className="text-sm text-red-300 mb-3">Cooling protocols active. Manual override disabled.</p>
+                <div className="flex items-center gap-3">
+                  <div className="h-2 flex-1 bg-red-900/50 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: "100%" }}
+                      animate={{ width: "0%" }}
+                      transition={{ duration: 15, ease: "linear" }}
+                      className="h-full bg-red-500"
+                    />
+                  </div>
+                  <span className="text-xs font-mono font-bold">{cooldownTime}s</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
