@@ -11,7 +11,11 @@ export async function POST(req: Request) {
 
     // Try ElevenLabs if API key is available
     const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
-    
+
+    // Debug log (safe)
+    console.log(`TTS Request: Text length ${text.length}, Language: ${languageCode}`);
+    console.log(`ElevenLabs Key present: ${!!elevenLabsApiKey}`);
+
     if (elevenLabsApiKey) {
       // Map language codes to ElevenLabs voice IDs
       const voiceMap: Record<string, string> = {
@@ -46,7 +50,9 @@ export async function POST(req: Request) {
       );
 
       if (!response.ok) {
-        throw new Error("ElevenLabs API failed");
+        const errorText = await response.text();
+        console.error(`ElevenLabs API Error (${response.status}):`, errorText);
+        throw new Error(`ElevenLabs API failed with status ${response.status}`);
       }
 
       const audioBuffer = await response.arrayBuffer();
@@ -56,6 +62,8 @@ export async function POST(req: Request) {
         audioContent: audioBase64,
         contentType: "audio/mpeg",
       });
+    } else {
+      console.warn("ElevenLabs API Key is missing. Falling back to browser TTS.");
     }
 
     // Fallback: Return success but client will use browser TTS
@@ -64,7 +72,7 @@ export async function POST(req: Request) {
       message: "Using browser-based TTS",
     });
   } catch (error: any) {
-    console.error("TTS API Error:", error);
+    console.error("TTS API Exception:", error);
     // Return fallback response instead of error
     return NextResponse.json({
       useBrowserTTS: true,
