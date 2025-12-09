@@ -1264,7 +1264,7 @@ export default function SolarPage() {
             peak: 0,
             today: 0,
             capacity: currentCapacity,
-            efficiency: 22.4,
+            efficiency: 99.2,
             panels: 124,
             predictionAccuracy: 94.2,
           });
