@@ -6,6 +6,7 @@ import TopMetricsRow from './TopMetricsRow';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import BuildingLeaderboard from './BuildingLeaderboard';
+import StudentEngagementWidget from './StudentEngagementWidget';
 
 type Metrics = {
   renewable_percent: number;
@@ -223,9 +224,10 @@ export default function DashboardContent({ initialMetrics, chartData, forecastDa
           </Link>
         </div>
 
-        {/* Building Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Leaderboards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 h-full">
           <BuildingLeaderboard buildings={buildings} />
+          <StudentEngagementWidget campus_id={user?.campus_admin_id} />
         </div>
 
       </div>
