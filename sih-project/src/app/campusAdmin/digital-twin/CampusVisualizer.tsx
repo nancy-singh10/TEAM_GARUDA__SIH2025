@@ -223,9 +223,23 @@ export default function CampusVisualizer({ buildings, setBuildings, energyMix, b
 
           return (
             <g key={b.id}>
-              {energyMix.solar > 0.05 && batteryStatus !== 'CHARGING' && <line x1={sx} y1={sy} x2={buildX} y2={buildY} stroke={SOURCES.SOLAR.color} strokeWidth={energyMix.solar * 5} opacity={0.6} />}
+              {energyMix.solar > 0.05 && batteryStatus !== 'CHARGING' && (
+                <>
+                  <line x1={sx} y1={sy} x2={buildX} y2={buildY} stroke={SOURCES.SOLAR.color} strokeWidth={energyMix.solar * 5} opacity={0.6} />
+                  <circle r="3" fill={SOURCES.SOLAR.color}>
+                    <animateMotion dur="1s" repeatCount="indefinite" path={`M ${sx} ${sy} L ${buildX} ${buildY}`} />
+                  </circle>
+                </>
+              )}
 
-              {energyMix.wind > 0.05 && batteryStatus !== 'CHARGING' && <line x1={wx} y1={wy} x2={buildX} y2={buildY} stroke={SOURCES.WIND.color} strokeWidth={energyMix.wind * 5} opacity={0.6} />}
+              {energyMix.wind > 0.05 && batteryStatus !== 'CHARGING' && (
+                <>
+                  <line x1={wx} y1={wy} x2={buildX} y2={buildY} stroke={SOURCES.WIND.color} strokeWidth={energyMix.wind * 5} opacity={0.6} />
+                  <circle r="3" fill={SOURCES.WIND.color}>
+                    <animateMotion dur="1s" repeatCount="indefinite" path={`M ${wx} ${wy} L ${buildX} ${buildY}`} />
+                  </circle>
+                </>
+              )}
 
               {batteryStatus === "DISCHARGING" && (
                 <>
@@ -236,7 +250,14 @@ export default function CampusVisualizer({ buildings, setBuildings, energyMix, b
                 </>
               )}
 
-              {energyMix.grid > 0.05 && <line x1={gx} y1={gy} x2={buildX} y2={buildY} stroke={SOURCES.GRID.color} strokeWidth={energyMix.grid * 4} opacity={0.4} strokeDasharray="2,2" />}
+              {energyMix.grid > 0.05 && (
+                <>
+                  <line x1={gx} y1={gy} x2={buildX} y2={buildY} stroke={SOURCES.GRID.color} strokeWidth={energyMix.grid * 4} opacity={0.4} strokeDasharray="2,2" />
+                  <circle r="3" fill={SOURCES.GRID.color}>
+                    <animateMotion dur="1.5s" repeatCount="indefinite" path={`M ${gx} ${gy} L ${buildX} ${buildY}`} />
+                  </circle>
+                </>
+              )}
             </g>
           );
         })}
@@ -373,6 +394,9 @@ export default function CampusVisualizer({ buildings, setBuildings, energyMix, b
                     ease: "linear"
                   } : { duration: 0 }}
                 >
+                  {/* Invisible Bounding Box to force center of rotation at 0,0 */}
+                  <rect x="-70" y="-70" width="140" height="140" fill="transparent" />
+
                   {/* Hub - Nose Cone */}
                   <circle cx="0" cy="0" r="3.5" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.5" filter="url(#shadow)" />
 

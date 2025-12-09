@@ -1870,8 +1870,10 @@ const useDashboardLogic = () => {
       const distFromNoon = Math.abs(12 - hourVal);
       const factor = Math.max(0, 1 - (distFromNoon / 6.5));
       newSolar = capacities.solar * factor * (Math.random() * 0.2 + 0.8);
+      if (newSolar < 50) newSolar = 0; // Cut-off threshold: No generation below 50kW
     }
     let newWind = Math.max(0, Math.min(capacities.wind, wind + (Math.random() - 0.5) * 80));
+    if (newWind < 10) newWind = 0; // Cut-off threshold: No generation below 10kW
 
     const generation = newSolar + newWind;
     const surplus = generation - totalLoad;
@@ -1959,11 +1961,13 @@ const useDashboardLogic = () => {
     return () => clearInterval(interval);
   }, [isAutoPilot, hourlyLogs]);
 
-  let dischargeKw = batteryStatus === "DISCHARGING" ? Math.min(capacities.maxDischargeRate, Math.max(0, totalLoad - (solar + wind))) : 0;
+  const effectiveWind = wind < 10 ? 0 : wind;
+  const effectiveSolar = solar < 50 ? 0 : solar;
+  let dischargeKw = batteryStatus === "DISCHARGING" ? Math.min(capacities.maxDischargeRate, Math.max(0, totalLoad - (effectiveSolar + effectiveWind))) : 0;
 
-  const usedSolar = Math.min(solar, totalLoad);
+  const usedSolar = Math.min(effectiveSolar, totalLoad);
   const remaining1 = Math.max(0, totalLoad - usedSolar);
-  const usedWind = Math.min(wind, remaining1);
+  const usedWind = Math.min(effectiveWind, remaining1);
   const remaining2 = Math.max(0, remaining1 - usedWind);
   const usedBattery = Math.min(dischargeKw, remaining2);
   const remaining3 = Math.max(0, remaining2 - usedBattery);
@@ -2214,8 +2218,8 @@ export default function DashboardPage() {
             timeOfDay={logic.time.getHours()}
             isFullScreen={fullScreen}
             onToggleFullScreen={() => setFullScreen(!fullScreen)}
-            windOutput={logic.wind}
-            solarOutput={logic.solar}
+            windOutput={logic.wind < 10 ? 0 : logic.wind}
+            solarOutput={logic.solar < 50 ? 0 : logic.solar}
           />
 
           {/* --- ANALYTICS MODAL --- */}
@@ -2246,41 +2250,10 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Modal Content - Graphs */}
-                  <div className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
-
-                    {/* Graph 1 */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col">
-                      <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={16} className="text-blue-500" />
-                        <h4 className="text-sm font-bold text-slate-600 uppercase">Renewable Mix</h4>
-                      </div>
-                      <div className="flex-1 w-full min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={graphData}>
-                            <defs>
-                              <linearGradient id="colorSolar" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#EAB308" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#EAB308" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={10} tickLine={false} axisLine={false} />
-                            <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-                            <Legend />
-                            <Area type="monotone" dataKey="solar" name="Solar" stroke="#EAB308" fillOpacity={1} fill="url(#colorSolar)" strokeWidth={2} />
-                            <Area type="monotone" dataKey="wind" name="Wind" stroke="#3B82F6" fillOpacity={1} fill="url(#colorWind)" strokeWidth={2} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
+                  <div className="flex-1 p-6 flex flex-col min-h-0">
 
                     {/* Graph 2 */}
-                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col">
+                    <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col flex-1">
                       <div className="flex items-center gap-2 mb-4">
                         <Zap size={16} className="text-green-500" />
                         <h4 className="text-sm font-bold text-slate-600 uppercase">Supply vs Demand</h4>
