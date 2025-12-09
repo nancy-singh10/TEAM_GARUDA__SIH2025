@@ -565,7 +565,7 @@ export default function CampusVisualizer({ buildings, setBuildings, energyMix, b
                     onChange={e => setFormName(e.target.value)}
                     onKeyDown={e => e.stopPropagation()}
                     autoFocus
-                    className="w-full border rounded p-2 text-sm mt-1"
+                    className="w-full border border-slate-300 rounded p-2 text-sm mt-1 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>

@@ -2093,20 +2093,23 @@ const CurrentStateSection = ({ data }: any) => {
          }
        `}</style>
 
-      <div className="absolute top-4 left-4 z-10 flex flex-col items-start">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Saved</div>
-        <div className={cn("text-xl font-mono font-bold flex items-center gap-1", totalCostSaved >= 0 ? "text-emerald-500" : "text-red-500")}>
-          <IndianRupee size={16} />
-          {totalCostSaved.toLocaleString()}
-        </div>
-      </div>
+
 
       <div className="p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="flex justify-between items-center mb-1">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dashboard</h2>
-          <div className="flex items-center gap-2 font-mono text-sm font-bold text-slate-700 dark:text-slate-200 mr-20">
-            {isNight ? <Moon size={14} /> : <Sun size={14} className="text-orange-500" />}
-            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 font-mono text-sm font-bold text-slate-700 dark:text-slate-200">
+              {isNight ? <Moon size={14} /> : <Sun size={14} className="text-orange-500" />}
+              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Total Saved</div>
+              <div className={cn("text-lg font-mono font-bold flex items-center gap-0.5 leading-none", totalCostSaved >= 0 ? "text-emerald-500" : "text-red-500")}>
+                <IndianRupee size={14} />
+                {totalCostSaved.toLocaleString()}
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-lg mb-2">
