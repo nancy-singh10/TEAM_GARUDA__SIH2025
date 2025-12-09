@@ -26,6 +26,33 @@ export default function BatteryPage() {
     cycleCount: 342,
   });
 
+  // --- CHART STATE (Dynamic) ---
+  const [thermalData, setThermalData] = useState([
+    { time: "12:00", cell1: 28.1, cell8: 28.2, pack: 28.0 },
+    { time: "01:00", cell1: 28.0, cell8: 28.1, pack: 27.9 },
+    { time: "02:00", cell1: 27.9, cell8: 28.0, pack: 27.8 },
+    { time: "03:00", cell1: 27.8, cell8: 27.9, pack: 27.7 },
+    { time: "04:00", cell1: 27.5, cell8: 27.6, pack: 27.4 },
+    { time: "05:00", cell1: 27.6, cell8: 27.7, pack: 27.5 },
+    { time: "06:00", cell1: 27.8, cell8: 27.9, pack: 27.6 },
+    { time: "07:00", cell1: 28.5, cell8: 28.6, pack: 28.3 },
+  ]);
+
+  const [healthMetrics, setHealthMetrics] = useState({
+    capacity: 95.2,
+    voltageBalance: 98.5,
+    resistance: 92.1,
+    temperature: 96.8,
+    cycleLife: 93.2,
+  });
+
+  const [efficiencyData, setEfficiencyData] = useState(() => Array.from({ length: 20 }, (_, i) => ({
+    cycle: i,
+    charge: 97 + Math.random() * 1.5,
+    discharge: 97.5 + Math.random() * 1.5,
+    roundTrip: 93 + Math.random() * 2,
+  })));
+
   // --- SIMULATION TRIGGER ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -100,7 +127,6 @@ export default function BatteryPage() {
     let mounted = true;
 
     const updateDashboard = (logs: any[]) => {
-      if (isOverheatedRef.current) return;
       if (!logs || logs.length === 0) return;
 
       const latest = logs[logs.length - 1];
@@ -117,32 +143,77 @@ export default function BatteryPage() {
       const additionalCycles = totalDischarge / 2000;
 
       if (mounted) {
-        setBatteryData({
-          current: pct,
-          capacity: 2000,
-          stored: Math.round(2000 * (pct / 100)),
-          charging: isCharging,
-          chargeRate: Math.round(rate * 10) / 10,
-          health: 94, // Static for MVP
-          cycleCount: Math.floor(342 + additionalCycles)
-        });
+        if (!isOverheatedRef.current) {
+          setBatteryData({
+            current: pct,
+            capacity: 2000,
+            stored: Math.round(2000 * (pct / 100)),
+            charging: isCharging,
+            chargeRate: Math.round(rate * 10) / 10,
+            health: 94, // Static for MVP
+            cycleCount: Math.floor(342 + additionalCycles)
+          });
 
-        // Hourly Status
-        const history = logs.map((l: any) => ({
-          hour: l.simulation_time,
-          level: Number(l.battery_percentage),
-          status: Number(l.battery_output) > 0 ? "discharging" : "charging"
-        }));
-        setHourlyStatus(history);
+          // Hourly Status
+          const history = logs.map((l: any) => ({
+            hour: l.simulation_time,
+            level: Number(l.battery_percentage),
+            status: Number(l.battery_output) > 0 ? "discharging" : "charging"
+          }));
+          setHourlyStatus(history);
 
-        // Update Cells based on %
-        // 0% -> 3.2V, 100% -> 4.2V
-        const baseV = 3.2 + (pct / 100) * 1.0;
-        setCellVoltages(prev => prev.map(c => ({
-          ...c,
-          voltage: Number((baseV + (Math.random() * 0.05 - 0.025)).toFixed(2)),
-          temp: Number((28 + (isCharging ? 2 : 0) + Math.random()).toFixed(1))
-        })));
+          // Update Cells based on %
+          // 0% -> 3.2V, 100% -> 4.2V
+          const baseV = 3.2 + (pct / 100) * 1.0;
+          setCellVoltages(prev => prev.map(c => ({
+            ...c,
+            voltage: Number((baseV + (Math.random() * 0.05 - 0.025)).toFixed(2)),
+            temp: Number((28 + (isCharging ? 2 : 0) + Math.random()).toFixed(1))
+          })));
+        }
+
+        // --- DYNAMIC REALISM UPDATES ---
+
+        // 1. Thermal Data (Based on load)
+        // Take last 8 hours of logs
+        const recentLogs = logs.slice(-8);
+        if (recentLogs.length > 0) {
+          const newThermal = recentLogs.map((l: any) => {
+            const out = Number(l.battery_output);
+            // Heat model: Base 25 + Load heating
+            const heat = (out / 2000) * 8; // Max ~8 deg rise at full load
+            const noise = Math.random() * 0.5;
+            const pTemp = 25 + heat + (isCharging ? 1 : 0) + noise;
+
+            // If Overheated, force critical
+            if (isOverheatedRef.current) return { time: l.simulation_time, cell1: 95.2, cell8: 94.8, pack: 95.0 };
+
+            return {
+              time: l.simulation_time,
+              cell1: Number((pTemp + Math.random() * 0.3).toFixed(1)),
+              cell8: Number((pTemp + Math.random() * 0.4).toFixed(1)),
+              pack: Number(pTemp.toFixed(1))
+            };
+          });
+          // Fill if < 8 (shouldn't happen often in full day sim, but handling init)
+          setThermalData(prev => {
+            if (newThermal.length < 8) return [...prev.slice(newThermal.length), ...newThermal];
+            return newThermal;
+          });
+        }
+
+        // 2. Health Metrics (Degrade with cycles)
+        if (!isOverheatedRef.current) {
+          const baseHealth = 95.2;
+          const degradation = additionalCycles * 0.05; // Fake degradation for demo
+          setHealthMetrics(prev => ({
+            ...prev,
+            capacity: Number((baseHealth - degradation).toFixed(1)),
+            cycleLife: Number((93.2 - degradation * 0.8).toFixed(1)),
+            // Temperature score drops if pack temp is high
+            temperature: Math.max(0, 100 - (rate > 100 ? 10 : 0))
+          }));
+        }
       }
     };
 
@@ -190,34 +261,7 @@ export default function BatteryPage() {
     };
   }, []);
 
-  // Temperature monitoring data (hourly from 12:00 to 14:00)
-  const thermalData = [
-    { time: "12:00", cell1: 28.1, cell8: 28.2, pack: 28.0 },
-    { time: "02:00", cell1: 27.9, cell8: 28.0, pack: 27.8 },
-    { time: "04:00", cell1: 27.5, cell8: 27.6, pack: 27.4 },
-    { time: "06:00", cell1: 27.8, cell8: 27.9, pack: 27.6 },
-    { time: "08:00", cell1: 29.2, cell8: 29.4, pack: 29.0 },
-    { time: "10:00", cell1: 31.5, cell8: 31.8, pack: 31.3 },
-    { time: "12:00", cell1: 33.8, cell8: 34.2, pack: 33.5 },
-    { time: "14:00", cell1: 34.2, cell8: 34.5, pack: 33.9 },
-  ];
 
-  // Health radar data
-  const healthMetrics = {
-    capacity: 95.2,
-    voltageBalance: 98.5,
-    resistance: 92.1,
-    temperature: 96.8,
-    cycleLife: 93.2,
-  };
-
-  // Efficiency data (20 cycles)
-  const efficiencyData = Array.from({ length: 20 }, (_, i) => ({
-    cycle: i,
-    charge: 97 + Math.random() * 1.5,
-    discharge: 97.5 + Math.random() * 1.5,
-    roundTrip: 93 + Math.random() * 2,
-  }));
 
 
 
