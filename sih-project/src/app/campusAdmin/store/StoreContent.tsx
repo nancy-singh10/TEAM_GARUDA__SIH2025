@@ -12,7 +12,7 @@ import {
     Package,
     Zap,
     Building2,
-    Wallet
+    Edit2
 } from 'lucide-react';
 
 interface StoreItem {
@@ -52,6 +52,8 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
     const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
     const [blockName, setBlockName] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'request' | 'edit'>('request');
+    const [editPrice, setEditPrice] = useState('');
 
     useEffect(() => {
         fetchItems();
@@ -95,11 +97,34 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
         }
     };
 
-    const handleApprove = async (requestId: string, cost: number) => {
-        if (balance < cost) {
-            alert("Insufficient Token Balance!");
-            return;
+    const handleUpdatePrice = async () => {
+        if (!selectedItem || !editPrice) return;
+        setLoading(true);
+        try {
+            const res = await fetch('/api/campusAdmin/store/items', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: selectedItem.id,
+                    token_cost: parseFloat(editPrice)
+                })
+            });
+
+            if (res.ok) {
+                setIsModalOpen(false);
+                setSelectedItem(null);
+                setEditPrice('');
+                fetchItems(); // Refresh items
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const handleApprove = async (requestId: string, cost: number) => {
+        // Balance check removed as per request
         setLoading(true);
         try {
             const res = await fetch('/api/campusAdmin/store/approve', {
@@ -115,7 +140,7 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                     r.id === requestId ? { ...r, status: 'APPROVED' } : r
                 ));
             } else {
-                alert("Failed to approve request");
+                alert("Failed to approve request: " + res.statusText);
             }
         } catch (e) {
             console.error(e);
@@ -137,16 +162,8 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-6 py-3 rounded-2xl shadow-lg border border-emerald-100 dark:border-emerald-900/30 ring-1 ring-black/5">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                        <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Token Balance</p>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white font-mono">
-                            {balance.toLocaleString()} TKN
-                        </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                    {/* Token balance display removed as per request */}
                 </div>
             </div>
 
@@ -230,7 +247,7 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                       </button> */}
                                             <button
                                                 onClick={() => handleApprove(req.id, req.store_items.token_cost)}
-                                                disabled={loading || balance < req.store_items.token_cost}
+                                                disabled={loading}
                                                 className="flex-1 md:flex-none px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-emerald-600/20"
                                             >
                                                 Approve
@@ -282,19 +299,36 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                                     </div>
                                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 h-10 line-clamp-2">{item.description}</p>
 
-                                    <div className="flex items-center justify-between mt-auto">
-                                        <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                                            {item.token_cost} <span className="text-sm font-normal text-slate-500">TKN</span>
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedItem(item);
-                                                setIsModalOpen(true);
-                                            }}
-                                            className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
-                                        >
-                                            Request
-                                        </button>
+                                    <div className="flex items-center justify-between mt-auto gap-3">
+                                        <div className="flex flex-col">
+                                            <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                                                {item.token_cost} <span className="text-sm font-normal text-slate-500">TKN</span>
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedItem(item);
+                                                    setEditPrice(item.token_cost.toString());
+                                                    setModalMode('edit');
+                                                    setIsModalOpen(true);
+                                                }}
+                                                className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                                title="Edit Price"
+                                            >
+                                                <Edit2 className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedItem(item);
+                                                    setModalMode('request');
+                                                    setIsModalOpen(true);
+                                                }}
+                                                className="px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+                                            >
+                                                Simulate Req
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -312,30 +346,45 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                         className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700"
                     >
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-                            Request {selectedItem.name}
+                            {modalMode === 'request' ? `Request ${selectedItem.name}` : `Edit ${selectedItem.name}`}
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                            Simulate a request coming from a specific block or department.
+                            {modalMode === 'request'
+                                ? 'Simulate a request coming from a specific block or department.'
+                                : 'Update the token cost for this item.'}
                         </p>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Block / Department Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={blockName}
-                                    onChange={(e) => setBlockName(e.target.value)}
-                                    placeholder="e.g. Hostel Block A"
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                                <span className="text-sm text-slate-500 dark:text-slate-400">Cost</span>
-                                <span className="font-bold text-slate-900 dark:text-white">{selectedItem.token_cost} TKN</span>
-                            </div>
+                            {modalMode === 'request' ? (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        Block / Department Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={blockName}
+                                        onChange={(e) => setBlockName(e.target.value)}
+                                        placeholder="e.g. Hostel Block A"
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    />
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mt-4">
+                                        <span className="text-sm text-slate-500 dark:text-slate-400">Cost</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{selectedItem.token_cost} TKN</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        Token Cost
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={editPrice}
+                                        onChange={(e) => setEditPrice(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3 mt-8">
@@ -346,11 +395,11 @@ export default function StoreContent({ campusAdminId, initialBalance }: StoreCon
                                 Cancel
                             </button>
                             <button
-                                onClick={handleSimulateRequest}
-                                disabled={!blockName || loading}
+                                onClick={modalMode === 'request' ? handleSimulateRequest : handleUpdatePrice}
+                                disabled={loading || (modalMode === 'request' ? !blockName : !editPrice)}
                                 className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium disabled:opacity-50"
                             >
-                                {loading ? 'Submitting...' : 'Submit Request'}
+                                {loading ? 'Processing...' : (modalMode === 'request' ? 'Submit Request' : 'Update Price')}
                             </button>
                         </div>
                     </motion.div>

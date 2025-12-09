@@ -18,7 +18,9 @@ export async function POST(request: Request) {
             solar_capacity,
             battery_output,
             saved,
-            battery_percentage
+            battery_percentage,
+            grid_used,
+            total_load
         } = body;
 
         const { error } = await supabase
@@ -26,13 +28,15 @@ export async function POST(request: Request) {
             .insert([
                 {
                     campus_id,
-                    simulation_date: date, // 'YYYY-MM-DD'
-                    simulation_time: time, // 'HH:MM:SS' or similar
-                    wind_capacity,
-                    solar_capacity,
+                    simulation_date: date,
+                    simulation_time: time,
+                    wind_generated: wind_capacity,   // Mapped to new column
+                    solar_generated: solar_capacity, // Mapped to new column
                     battery_output,
-                    battery_percentage, // Added battery percentage
-                    saved,
+                    battery_percentage,
+                    cost_saved: saved,               // Mapped to new column
+                    grid_used,                       // New Column
+                    total_load,                      // New Column
                     created_at: new Date().toISOString()
                 }
             ]);

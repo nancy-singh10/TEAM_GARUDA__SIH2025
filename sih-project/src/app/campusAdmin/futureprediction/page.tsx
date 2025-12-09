@@ -146,7 +146,7 @@ export default function FuturePredictionPage() {
                             <CardHeader className="px-0 pt-0">
                                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                                     <TrendingUp className="w-5 h-5 text-purple-500" />
-                                    Forecast Variance (3 Days Before - 2 Days After)
+                                    Solar & Wind Generation Trend (6-Day Forecast)
                                 </CardTitle>
                                 <p className="text-sm text-slate-500">Analysis of Wind and Solar trends around the selected date.</p>
                             </CardHeader>

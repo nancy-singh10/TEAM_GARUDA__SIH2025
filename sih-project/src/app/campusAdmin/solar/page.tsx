@@ -1199,6 +1199,7 @@ import { ArrowLeft, Sun, TrendingUp, Calendar, Zap, CloudSun, ThermometerSun, Ta
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 // --- TYPES ---
 interface SolarData {
@@ -1251,94 +1252,103 @@ export default function SolarPage() {
   const [weeklyForecast, setWeeklyForecast] = useState<ForecastDay[]>([]);
 
   useEffect(() => {
-    // --- IMPORT FROM LOCAL STORAGE (The Bridge) ---
-    const loadFromSimulation = () => {
-      try {
-        const savedData = localStorage.getItem("campus-simulation-data");
+    const todayStr = new Date().toISOString().split('T')[0];
+    let mounted = true;
 
-        // DEFAULT VALUES (Used if dashboard hasn't run yet)
-        let currentSolar = 0;
-        let logs: any[] = [];
-        let capacity = 900; // Default capacity from dashboard logic
-
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          currentSolar = parsed.solar || 0;
-          logs = parsed.hourlyLogs || [];
-          // If capacity exists in logs, use it, otherwise default
-          if (parsed.capacities && parsed.capacities.solar) {
-            capacity = parsed.capacities.solar;
-          }
+    // --- HELPER: UPDATES ALL DASHBOARD STATE FROM LOGS ---
+    const updateDashboardFromLogs = (logs: any[], currentCapacity: number = 900) => {
+      if (!logs || logs.length === 0) {
+        if (mounted) {
+          setSolarData({
+            current: 0,
+            peak: 0,
+            today: 0,
+            capacity: currentCapacity,
+            efficiency: 22.4,
+            panels: 124,
+            predictionAccuracy: 94.2,
+          });
+          setHourlyGeneration([]);
         }
+        return;
+      }
 
-        // --- 1. PROCESS SOLAR DATA ---
-        // Calculate Peak: Max of history logs OR current value
-        const peakSoFar = logs.length > 0
-          ? Math.max(...logs.map((l: any) => l.solar), currentSolar)
-          : currentSolar;
+      // 1. Solar Data
+      const latestLog = logs[logs.length - 1];
+      const currentSolar = Number(latestLog.solar_generated) || 0;
+      const peakSoFar = Math.max(...logs.map((l: any) => Number(l.solar_generated)), 0);
+      const todayTotal = logs.reduce((acc: number, curr: any) => acc + (Number(curr.solar_generated) || 0), 0);
+      const currentLoad = Number(latestLog.total_load) || 0;
 
-        const todayTotal = logs.reduce((acc: number, curr: any) => acc + curr.solar, 0);
-
+      if (mounted) {
         setSolarData({
           current: Math.round(currentSolar),
           peak: Math.round(peakSoFar),
           today: Math.round(todayTotal),
-          capacity: capacity,
-          efficiency: 22.4, // Hardware constant
-          panels: 124,      // Hardware constant
-          predictionAccuracy: 94.2, // Model constant
+          capacity: currentCapacity,
+          efficiency: 22.4,
+          panels: 124,
+          predictionAccuracy: 94.2,
         });
 
-        // --- 2. PROCESS HOURLY GENERATION ---
+        // 2. Hourly Generation
         const formattedHourly: HourlyData[] = logs.map((log: any) => ({
-          hour: log.hour,
-          generation: log.solar
+          hour: log.simulation_time, // e.g., "10:00"
+          generation: Number(log.solar_generated)
         }));
         setHourlyGeneration(formattedHourly);
 
-        // --- 3. SIMULATE PREDICTIONS (Based on real logs) ---
-        // We simulate "Predicted" vs "Actual" by taking the actual simulation data 
-        // and adding slight noise to create the "Predicted" value.
+        // 3. Simulate Predictions & Correlations (Keeping existing logic but using real DB data)
         const predictions: PredictionData[] = logs.map((log: any) => {
-          const hourInt = parseInt(log.hour.split(':')[0]);
-          // Simulate a temperature curve peaking at 2pm (14:00)
+          const timeStr = log.simulation_time || "00:00";
+          const hourInt = parseInt(timeStr.split(':')[0]);
           const temp = Math.round(25 + 10 * Math.sin(Math.PI * (hourInt - 8) / 12));
-
+          const actual = Number(log.solar_generated);
           return {
-            hour: log.hour,
-            // Predicted is Actual +/- 15% noise
-            predicted: Math.round(log.solar * (0.85 + Math.random() * 0.3)),
-            actual: log.solar,
-            temp: Math.max(20, temp) // Min temp 20C
+            hour: timeStr,
+            predicted: Math.round(actual * (0.85 + Math.random() * 0.3)),
+            actual: actual,
+            temp: Math.max(20, temp)
           };
         });
         setPredictionVsActual(predictions);
 
-        // --- 4. TEMP CORRELATION ---
-        // Filter out night hours (low production) to see real correlation
         const correlations: TempCorrelation[] = predictions
           .filter(p => p.actual > 10)
           .map(p => ({ temp: p.temp, production: p.actual }))
           .sort((a, b) => a.temp - b.temp)
-          .filter((_, i) => i % 2 === 0) // Take every 2nd point to de-clutter
+          .filter((_, i) => i % 2 === 0)
           .slice(0, 6);
         setTempVsProduction(correlations);
+      }
+    };
 
-        // --- 5. GENERATE FORECAST ---
+    // --- INITIAL FETCH ---
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('digital_twin_simulation_logs')
+          .select('*')
+          .eq('campus_id', 'CAMPUS_001')
+          .eq('simulation_date', todayStr)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        // Generate Forecast only once on load (randomized)
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const todayDate = new Date();
-
         const forecast: ForecastDay[] = Array.from({ length: 7 }).map((_, i) => {
           const d = new Date(todayDate);
           d.setDate(todayDate.getDate() + i);
-          const isSunny = Math.random() > 0.3; // 70% chance of sun
-          const dailyPeak = isSunny ? capacity * 0.9 : capacity * 0.4;
-
+          const isSunny = Math.random() > 0.3;
+          const dailyPeak = isSunny ? 810 : 360;
           return {
             day: i,
             date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             dayName: days[d.getDay()],
-            total: Math.round(dailyPeak * 5.5), // Rough integration of bell curve
+            total: Math.round(dailyPeak * 5.5),
             peak: Math.round(dailyPeak),
             weather: isSunny ? "Sunny" : "Cloudy",
             temp: Math.round(28 + (Math.random() * 5)),
@@ -1349,21 +1359,59 @@ export default function SolarPage() {
             ]
           };
         });
-        setWeeklyForecast(forecast);
+        if (mounted) setWeeklyForecast(forecast);
 
-      } catch (error) {
-        console.error("Failed to load simulation data", error);
+        updateDashboardFromLogs(data || []);
+      } catch (err) {
+        console.error("Error fetching initial solar data:", err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    // Load immediately on mount
-    loadFromSimulation();
+    fetchInitialData();
 
-    // Optional: Poll every 2 seconds to keep in sync if dashboard is running in another tab
-    const interval = setInterval(loadFromSimulation, 2000);
-    return () => clearInterval(interval);
+    // --- REALTIME SUBSCRIPTION ---
+    const subscription = supabase
+      .channel('solar-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'digital_twin_simulation_logs', filter: `campus_id=eq.CAMPUS_001` },
+        (payload) => {
+          // Check if the new log belongs to today (simulation_date)
+          // Ideally we filter by date in the channel filter too, but row level filtering is safer in callback
+          if (payload.new.simulation_date === todayStr) {
+            setHourlyGeneration(prev => {
+              const newLog = payload.new;
+              // Append new data
+              const newItem: HourlyData = {
+                hour: newLog.simulation_time,
+                generation: Number(newLog.solar_generated)
+              };
+
+              // Update other stats incrementally to avoid excessive re-render or complex state merging
+              setSolarData(prevSolar => {
+                if (!prevSolar) return null;
+                const val = Number(newLog.solar_generated);
+                return {
+                  ...prevSolar,
+                  current: Math.round(val),
+                  peak: Math.max(prevSolar.peak, val),
+                  today: prevSolar.today + val
+                };
+              });
+
+              return [...prev, newItem];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   // Loading Screen

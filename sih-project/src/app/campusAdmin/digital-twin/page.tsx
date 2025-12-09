@@ -1834,7 +1834,7 @@ const useDashboardLogic = () => {
   }, []);
   const totalLoad = buildings.reduce((sum, b) => sum + b.baseLoad, 0);
 
-  const saveSimulationData = async (s: number, w: number, b_output: number, b_percent: number, saved_val: number, current_time: string) => {
+  const saveSimulationData = async (s: number, w: number, b_output: number, b_percent: number, saved_val: number, current_time: string, grid_used: number, total_load: number) => {
     try {
       await fetch('/api/digital-twin/save-simulation', {
         method: 'POST',
@@ -1847,7 +1847,9 @@ const useDashboardLogic = () => {
           solar_capacity: s,
           battery_output: b_output,
           battery_percentage: b_percent,
-          saved: saved_val
+          saved: saved_val,
+          grid_used: grid_used,
+          total_load: total_load
         })
       });
     } catch (e) { console.error("Simulation save error", e); }
@@ -1855,25 +1857,21 @@ const useDashboardLogic = () => {
 
   // --- SIMULATION STEP ---
   const handleAdvanceTime = (saveToCloud = false) => {
+    // STRICT GUARD: Absolute limit of 24 logs
+    if (hourlyLogs.length >= 24) {
+      setIsAutoPilot(false);
+      return;
+    }
+
     let currentLogs = [...hourlyLogs];
     let currentBaseTime = new Date(time);
     let currentTotalSaved = totalCostSaved;
 
+    // Redundant safety check, but keeping flow
     if (currentLogs.length >= 24) {
-      currentLogs = [];
-      currentTotalSaved = 0;
-      currentBaseTime = new Date();
-      currentBaseTime.setHours(0, 0, 0, 0);
-      setHourlyLogs([]);
-      setTotalCostSaved(0);
-
-      // TRIGGER BACKEND RESET
-      fetch('/api/digital-twin/reset-simulation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campus_id: "CAMPUS_001" })
-      }).then(() => console.log("Backend simulation auto-reset successful"))
-        .catch(err => console.error("Backend simulation auto-reset failed", err));
+      // Should be caught by guard, but just in case
+      setIsAutoPilot(false);
+      return;
     }
 
     const updatedTime = new Date(currentBaseTime);
@@ -1887,10 +1885,10 @@ const useDashboardLogic = () => {
       const distFromNoon = Math.abs(12 - hourVal);
       const factor = Math.max(0, 1 - (distFromNoon / 6.5));
       newSolar = capacities.solar * factor * (Math.random() * 0.2 + 0.8);
-      if (newSolar < 50) newSolar = 0; // Cut-off threshold: No generation below 50kW
+      if (newSolar < 50) newSolar = 0; // Cut-off threshold
     }
     let newWind = Math.max(0, Math.min(capacities.wind, wind + (Math.random() - 0.5) * 80));
-    if (newWind < 10) newWind = 0; // Cut-off threshold: No generation below 10kW
+    if (newWind < 10) newWind = 0; // Cut-off threshold
 
     const generation = newSolar + newWind;
     const surplus = generation - totalLoad;
@@ -1932,6 +1930,7 @@ const useDashboardLogic = () => {
 
     const updatedLogs = [...currentLogs, newLog];
 
+    // STATE UPDATES
     setHourlyLogs(updatedLogs);
     setTotalCostSaved(currentTotalSaved + Math.round(costStep));
 
@@ -1941,14 +1940,15 @@ const useDashboardLogic = () => {
     setBatteryStatus(status);
     setTime(updatedTime);
 
-    // Auto-save logic
+    // PERSISTENCE: Save to Cloud
     if (saveToCloud) {
-      console.log("Saving simulation data...", { hourStr, newSolar, newWind });
-      saveSimulationData(newSolar, newWind, batteryOutput, newBatteryPercent, newSolar + newWind, hourStr)
-        .then(() => console.log("Simulation data saved successfully"))
+      // We only save if we haven't exceeded 24 logs (already checked by guard)
+      // Use fire-and-forget but log errors
+      saveSimulationData(newSolar, newWind, batteryOutput, newBatteryPercent, Math.round(costStep), hourStr, Math.round(gridUsed), totalLoad)
         .catch(err => console.error("Error saving simulation data:", err));
     }
 
+    // Auto-Stop if we just hit 24
     if (updatedLogs.length >= 24) {
       setIsAutoPilot(false);
     }
@@ -1958,7 +1958,10 @@ const useDashboardLogic = () => {
     // 1. Reset frontend
     setHourlyLogs([]);
     setTotalCostSaved(0);
-    // 2. Reset Backend Logs
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    setTime(d);
+
+    // 2. Reset Backend Logs (Critical for fresh cycle)
     try {
       await fetch('/api/digital-twin/reset-simulation', {
         method: 'POST',
@@ -1970,16 +1973,34 @@ const useDashboardLogic = () => {
       console.error("Failed to reset backend logs:", e);
     }
 
-    const d = new Date(); d.setHours(0, 0, 0, 0);
-    setTime(d);
+    // 3. Start Auto Pilot
     setIsAutoPilot(true);
   };
 
-  const toggleAutoPilot = () => {
-    if (!isAutoPilot && hourlyLogs.length >= 24) {
-      resetDay();
+  const toggleAutoPilot = async () => {
+    if (isAutoPilot) {
+      // PAUSE: Just stop the interval, do NOT reset data
+      setIsAutoPilot(false);
     } else {
-      setIsAutoPilot(!isAutoPilot);
+      // START / RESUME
+      if (hourlyLogs.length >= 24) {
+        // Cycle complete, restart from scratch
+        await resetDay();
+      } else if (hourlyLogs.length === 0) {
+        // Fresh Start: CLEAN DB FIRST
+        try {
+          await fetch('/api/digital-twin/reset-simulation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campus_id: "CAMPUS_001" })
+          });
+        } catch (e) { console.error("AutoPilot Start Reset Error", e); }
+
+        setIsAutoPilot(true);
+      } else {
+        // RESUME: Continue adding to existing logs (DB not cleared)
+        setIsAutoPilot(true);
+      }
     }
   };
 
@@ -2072,7 +2093,7 @@ const CurrentStateSection = ({ data }: any) => {
          }
        `}</style>
 
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end">
+      <div className="absolute top-4 left-4 z-10 flex flex-col items-start">
         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Saved</div>
         <div className={cn("text-xl font-mono font-bold flex items-center gap-1", totalCostSaved >= 0 ? "text-emerald-500" : "text-red-500")}>
           <IndianRupee size={16} />
@@ -2151,7 +2172,7 @@ const CurrentStateSection = ({ data }: any) => {
               <span className="flex items-center gap-1"><Sun size={12} /> Solar</span>
               <span>{Math.round(solar)} kW</span>
             </div>
-            <input type="range" min="0" max={capacities.solar} value={solar} onChange={(e) => !isAutoPilot && data.setSolar(Number(e.target.value))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-yellow-500" />
+            <input type="range" min="0" max={capacities.solar} value={solar} onChange={(e) => !isAutoPilot && data.setSolar(Math.max(50, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-yellow-500" />
           </div>
 
           <div>
@@ -2159,7 +2180,7 @@ const CurrentStateSection = ({ data }: any) => {
               <span className="flex items-center gap-1"><Leaf size={12} /> Wind</span>
               <span>{Math.round(wind)} kW</span>
             </div>
-            <input type="range" min="0" max={capacities.wind} value={wind} onChange={(e) => !isAutoPilot && data.setWind(Number(e.target.value))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+            <input type="range" min="0" max={capacities.wind} value={wind} onChange={(e) => !isAutoPilot && data.setWind(Math.max(10, Number(e.target.value)))} disabled={isAutoPilot} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500" />
           </div>
         </div>
 
@@ -2296,6 +2317,8 @@ export default function DashboardPage() {
                             <YAxis fontSize={10} tickLine={false} axisLine={false} />
                             <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
                             <Legend />
+                            <Line type="monotone" dataKey="solar" name="Solar (kW)" stroke="#EAB308" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="wind" name="Wind (kW)" stroke="#3B82F6" strokeWidth={2} dot={false} />
                             <Line type="monotone" dataKey="totalRenewable" name="Generation (kW)" stroke="#10B981" strokeWidth={3} dot={false} />
                             <Line type="step" dataKey="load" name="Total Load (kW)" stroke="#EF4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                           </LineChart>

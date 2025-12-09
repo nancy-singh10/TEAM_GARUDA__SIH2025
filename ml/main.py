@@ -7,6 +7,7 @@ import lstm  # Import our new module
 import pandas as pd
 import joblib
 import os
+from datetime import date, timedelta
 
 app = FastAPI()
 
@@ -63,6 +64,12 @@ class DayPredictionRequest(BaseModel):
 class DayWisePredictionRequest(BaseModel):
     month: int
     day: int
+
+class RangePredictionRequest(BaseModel):
+    start_year: int
+    start_month: int
+    start_day: int
+    days_count: int
 
 @app.get("/")
 def read_root():
@@ -165,6 +172,63 @@ def predict_day_wise(request: DayWisePredictionRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+
+@app.post("/predict/range")
+def predict_range_values(request: RangePredictionRequest):
+    """
+    Predicts values for a range of days (e.g. 3 days before + selected + 2 days after).
+    Returns a list of daily summaries (Date, Total Solar, Total Wind).
+    """
+    if day_wise_model is None:
+        raise HTTPException(status_code=503, detail="Day Wise model is not available.")
+
+    try:
+        start_date = date(request.start_year, request.start_month, request.start_day)
+        days_count = request.days_count
+        
+        results = []
+
+        for i in range(days_count):
+            current_date = start_date + timedelta(days=i)
+            c_month = current_date.month
+            c_day = current_date.day
+
+            # Prepare 24-hour input for this specific day
+            future_data = []
+            for hour in range(24):
+                future_data.append([c_month, c_day, hour])
+            
+            prediction_input = pd.DataFrame(future_data, columns=['MO', 'DY', 'HR'])
+            
+            # Predict
+            predictions = day_wise_model.predict(prediction_input)
+            
+            # Aggregate for the day
+            daily_solar = 0.0
+            daily_wind = 0.0
+            
+            for row in predictions:
+                # row is [SRAD, WS, TM, HU]
+                srad = float(row[0])
+                ws = float(row[1])
+                
+                # Simple accumulation (same logic as single day usually)
+                if srad > 0:
+                    daily_solar += srad
+                if ws > 0:
+                    daily_wind += ws
+
+            results.append({
+                "date": current_date.isoformat(),
+                "total_solar": daily_solar,
+                "total_wind": daily_wind
+            })
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Range prediction error: {str(e)}")
 
 
 @app.get("/simulate")

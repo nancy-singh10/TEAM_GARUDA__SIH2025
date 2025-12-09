@@ -47,9 +47,10 @@ export async function POST(request: Request) {
             throw new Error('Wallet not found');
         }
 
-        if (wallet.balance < cost) {
-            return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
-        }
+        // Balance check removed as per requirement - allowing negative balance
+        // if (wallet.balance < cost) {
+        //     return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
+        // }
 
         // 3. Process Transaction (Deduct tokens)
         const { error: txError } = await supabaseAdmin
