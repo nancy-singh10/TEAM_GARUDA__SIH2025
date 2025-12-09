@@ -162,6 +162,26 @@ export default async function CampusAdminDashboard() {
   const forecastWind = peakWind;
   const forecastGrid = Math.max(1, Math.round((m.monthly_usage_kwh ?? 850) / 30 / 24));
 
+  // Fetch Buildings
+  let buildings: any[] = [];
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('campus_buildings')
+      .select('*')
+      .eq('campus_admin_id', user?.campus_admin_id);
+
+    if (error) {
+      console.error("Supabase Error fetching buildings:", error);
+    }
+
+    if (data) {
+      console.log("Buildings fetched:", data.length);
+      buildings = data;
+    }
+  } catch (e) {
+    console.error("Failed to fetch buildings", e);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
 
@@ -175,6 +195,7 @@ export default async function CampusAdminDashboard() {
           wind: forecastWind
         }}
         user={user}
+        buildings={buildings}
       />
     </div>
   );

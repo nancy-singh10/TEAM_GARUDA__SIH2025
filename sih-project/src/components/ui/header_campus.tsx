@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2, LineChart } from 'lucide-react';
+import { Zap, LayoutDashboard, Radio, Bot, Download, User, LogOut, Settings, MapPin, Mail, Building, Moon, Sun, Bell, MessageSquare, Coins, AlertTriangle, X, Trash2, LineChart, ShoppingBag } from 'lucide-react';
 
 type CampusUser = {
   admin_name: string;
@@ -189,6 +189,7 @@ export default function HeaderCampus({ user }: { user: CampusUser | null }) {
               { name: 'Dashboard', href: '/campusAdmin/dashboard', icon: LayoutDashboard },
               { name: 'Digital Twin', href: '/campusAdmin/digital-twin', icon: Radio },
               { name: 'Future Prediction', href: '/campusAdmin/futureprediction', icon: LineChart },
+              { name: 'Store', href: '/campusAdmin/store', icon: ShoppingBag },
               { name: 'Wallet', href: '/campusAdmin/tokens', icon: Coins },
               { name: 'Chatbot', href: '/campusAdmin/ai', icon: Bot },
             ].map((link) => {
