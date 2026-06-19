@@ -25,29 +25,18 @@ export default function StateAdminDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Fetch Campus Admin Data
-        const { data: campusData, error: campusError } = await supabase
-          .from('campus_admin')
-          .select(`
-            campus_admin_id,
-            campus_name,
-            location,
-            admin_name
-          `);
+        // 1. & 2. Fetch Campus Data and Comparison Data from secure API
+        const response = await fetch('/api/stateAdmin/campuses');
+        const { campusData, comparisonData, error } = await response.json();
 
-        if (campusError) throw campusError;
-
-        // 2. Fetch Campus Comparison Data (for renewable usage)
-        const { data: comparisonData, error: comparisonError } = await supabase
-          .from('campus_comparison')
-          .select('campus_admin_id, renewable_energy_used');
-
-        if (comparisonError) throw comparisonError;
+        if (error) throw new Error(error);
 
         // Create a map for quick lookup of renewable usage
         const usageMap = new Map();
         comparisonData?.forEach(item => {
-          usageMap.set(item.campus_admin_id, item.renewable_energy_used);
+          const id = item.campus_admin_id || item.campus_id || item.id;
+          const usage = item.renewable_energy_used || item.renewable_energy_usage || item.renewable_percent || 0;
+          usageMap.set(id, usage);
         });
 
         // 3. Process and Geocode Data

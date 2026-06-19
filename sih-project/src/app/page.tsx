@@ -90,11 +90,11 @@ export default function LandingPage() {
             key={i}
             className="absolute w-4 h-4 bg-slate-700/50 rounded-full"
             style={{
-              left: `${Math.random() * 90}%`,
-              top: `${Math.random() * 90}%`
+              left: `${(i * 17 + 10) % 90}%`,
+              top: `${(i * 23 + 15) % 90}%`
             }}
             animate={{ y: [0, -50, 0], rotate: 360 }}
-            transition={{ duration: 10 + Math.random() * 10, repeat: Infinity }}
+            transition={{ duration: 10 + (i % 10), repeat: Infinity }}
           />
         ))}
 

@@ -16,7 +16,7 @@ export async function GET(request: Request) {
         const year = targetDate.getFullYear();
 
         // Call the Python ML API
-        const mlApiResponse = await fetch('http://localhost:8000/predict/day-wise', {
+        const mlApiResponse = await fetch('http://127.0.0.1:8000/predict/day-wise', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

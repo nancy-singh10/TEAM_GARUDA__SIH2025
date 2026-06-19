@@ -21,7 +21,7 @@ export const FloatingIsland = ({ children, className = "", delay = 0, width = 20
                 rotate: [-2, 2, -2],
             }}
             transition={{
-                duration: 6 + Math.random() * 4,
+                duration: 6 + (width % 4),
                 repeat: Infinity,
                 ease: "easeInOut",
                 delay: delay,
@@ -48,9 +48,9 @@ export const FloatingIsland = ({ children, className = "", delay = 0, width = 20
                     <motion.div
                         key={i}
                         className="absolute w-1 h-1 bg-emerald-400 rounded-full"
-                        style={{ left: `${Math.random() * 100}%`, top: 0 }}
+                        style={{ left: `${(i * 33 + 15) % 100}%`, top: 0 }}
                         animate={{ y: [0, 30], opacity: [1, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: Math.random() * 2 }}
+                        transition={{ duration: 2, repeat: Infinity, delay: (i * 0.5) % 2 }}
                     />
                 ))}
             </div>

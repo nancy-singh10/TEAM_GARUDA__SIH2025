@@ -14,25 +14,25 @@ export async function POST(request: Request) {
     // 1. UPDATE LIVE STATUS (campus_analysis)
     const { error: updateError } = await supabase
       .from('campus_analysis')
-      .update({ 
-        energy_solar: solar, 
-        energy_wind: wind, 
-        load: load, 
-        battery_percent: battery_percent 
+      .update({
+        energy_solar: solar,
+        energy_wind: wind,
+        load: load,
+        battery_percent: battery_percent
       })
       .eq('campus_admin_id', campus_id);
 
     if (updateError) throw updateError;
-    
+
     // 2. INSERT HISTORY (campus_history)
     const { error: insertError } = await supabase
       .from('campus_history')
       .insert([
-        { 
-          campus_admin_id: campus_id, 
-          energy_solar: solar, 
-          energy_wind: wind, 
-          load: load, 
+        {
+          campus_admin_id: campus_id,
+          energy_solar: solar,
+          energy_wind: wind,
+          load: load,
           battery_percent: battery_percent,
           recorded_at: new Date().toISOString() // NOW()
         }

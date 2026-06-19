@@ -7,15 +7,32 @@ export const dynamic = 'force-dynamic';
 
 async function fetchWalletBalance(campusAdminId: string) {
     try {
-        const { data, error } = await supabaseAdmin
+        let { data, error } = await supabaseAdmin
             .from('token_wallets')
             .select('balance')
             .eq('campus_admin_id', campusAdminId)
             .single();
 
         if (error) {
-            console.error('Error fetching wallet:', error);
-            return 0; // Default or maybe create one if missing?
+            // PGRST116 means no rows found, which is expected for a new admin
+            if (error.code === 'PGRST116') {
+                console.log(`No wallet found for admin ${campusAdminId}. Creating a default wallet.`);
+                // Create a default wallet
+                const { data: newWallet, error: insertError } = await supabaseAdmin
+                    .from('token_wallets')
+                    .insert({ campus_admin_id: campusAdminId, balance: 0 })
+                    .select('balance')
+                    .single();
+                
+                if (insertError) {
+                    console.error('Failed to create wallet:', insertError);
+                    return 0;
+                }
+                return Number(newWallet.balance);
+            }
+            
+            console.error('Error fetching wallet:', JSON.stringify(error));
+            return 0;
         }
         return Number(data.balance);
     } catch (err) {

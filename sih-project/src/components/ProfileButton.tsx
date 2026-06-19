@@ -80,8 +80,13 @@ export default function ProfileButton() {
     }
   };
 
-  const handleLogout = () => {
-    // Add logout logic here
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/campusAdmin/logout', { method: 'POST' });
+      localStorage.removeItem('sessionUser');
+    } catch (e) {
+      console.error(e);
+    }
     window.location.href = "/";
   };
 

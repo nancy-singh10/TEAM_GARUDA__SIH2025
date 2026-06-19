@@ -164,22 +164,24 @@ export default async function CampusAdminDashboard() {
 
   // Fetch Buildings
   let buildings: any[] = [];
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('campus_buildings')
-      .select('*')
-      .eq('campus_admin_id', user?.campus_admin_id);
+  if (user && user.campus_admin_id) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('campus_buildings')
+        .select('*')
+        .eq('campus_admin_id', user.campus_admin_id);
 
-    if (error) {
-      console.error("Supabase Error fetching buildings:", error);
-    }
+      if (error) {
+        console.error("Supabase Error fetching buildings:", error);
+      }
 
-    if (data) {
-      console.log("Buildings fetched:", data.length);
-      buildings = data;
+      if (data) {
+        console.log("Buildings fetched:", data.length);
+        buildings = data;
+      }
+    } catch (e) {
+      console.error("Failed to fetch buildings", e);
     }
-  } catch (e) {
-    console.error("Failed to fetch buildings", e);
   }
 
   return (
