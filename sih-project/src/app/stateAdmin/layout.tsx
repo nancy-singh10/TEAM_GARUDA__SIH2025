@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import HeaderState from '@/components/ui/header_state';
 
+export const dynamic = 'force-dynamic';
+
 type StateUser = {
   admin_name: string;
   state_name: string;

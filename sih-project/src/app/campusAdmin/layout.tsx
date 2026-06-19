@@ -1,5 +1,7 @@
 import supabaseAdmin from '@/lib/supabaseServer';
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 import HeaderCampus from '@/components/ui/header_campus'; // Assuming this is your green header
 
 // Reuse the same user type
